@@ -1,4 +1,6 @@
 # YTBlinds - Especificación de Paquetes
 # Instalar con: pip install -r requirements.txt
 customtkinter>=5.2.0
+CTkMessagebox>=2.7
+pyttsx3
 yt-dlp>=2023.10.07

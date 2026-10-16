@@ -8,4 +8,18 @@ class AccessibilityManager:
     @staticmethod
     def announce(text):
         print(f"[ACCESSIBILITY ANNOUNCE]: {text}")
-        # En el futuro se puede integrar pyttsx3 o similar si se desea.
+        # Integración opcional con síntesis de voz multiplataforma (pyttsx3) si está disponible
+        try:
+            # Inicializar en un hilo separado para evitar bloqueos en la interfaz gráfica
+            import threading
+            import pyttsx3
+            def speak():
+                try:
+                    engine = pyttsx3.init()
+                    engine.say(text)
+                    engine.runAndWait()
+                except Exception:
+                    pass
+            threading.Thread(target=speak, daemon=True).start()
+        except ImportError:
+            pass
