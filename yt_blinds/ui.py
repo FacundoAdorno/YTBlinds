@@ -289,18 +289,25 @@ class MainWindow:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Crear campos individuales navegables mediante Tab (Entry de sola lectura)
+        # Crear campos individuales navegables mediante Tab
         for label_text, value_text in info_fields:
             field_frame = tk.Frame(scrollable_frame, bg=self.bg_color, pady=5)
-            field_frame.pack(fill=tk.X, padx=5)
+            field_frame.pack(fill=tk.X, padx=5, expand=True)
 
-            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 12, "bold"), width=15, anchor="w")
-            lbl.pack(side=tk.LEFT, padx=5)
+            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 12, "bold"), anchor="w")
+            lbl.pack(anchor=tk.W, padx=5, pady=2)
 
-            entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
-            entry_val.insert(0, str(value_text))
-            entry_val.config(state="readonly")
-            entry_val.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+            if label_text == "Descripción":
+                # Usar Textarea accesible con scroll para la descripción
+                txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+                txt_val.insert("1.0", str(value_text))
+                txt_val.config(state=tk.DISABLED)
+                txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
+            else:
+                entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+                entry_val.insert(0, str(value_text))
+                entry_val.config(state="readonly")
+                entry_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
 
         # Botón cerrar al final del Tab
         btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
