@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
+from datetime import datetime
+import locale
 from .downloader import Downloader
 from .updater import Updater
 from .accessibility import AccessibilityManager
@@ -9,6 +11,8 @@ class MainWindow:
     """Ventana principal accesible para personas no videntes."""
 
     def __init__(self, root):
+        locale.setlocale(locale.LC_TIME, "es_ES")
+
         self.root = root
         self.root.title("YTBlinds - Descargador Accesible de YouTube")
         self.root.geometry("800x650")
@@ -32,7 +36,43 @@ class MainWindow:
         self.create_widgets()
         self.bind_shortcuts()
 
-        AccessibilityManager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador.")
+        # Interceptar el cierre de la ventana principal para pedir doble Escape
+        self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
+        self.root.bind("<Escape>", lambda e: self.confirm_exit())
+
+        AccessibilityManager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir.")
+
+    def confirm_exit(self):
+        AccessibilityManager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar.")
+
+        exit_win = tk.Toplevel(self.root)
+        exit_win.title("Confirmar Salida - YTBlinds")
+        exit_win.geometry("450x200")
+        exit_win.configure(bg=self.bg_color)
+        exit_win.grab_set() # Hacer ventana modal
+
+        lbl_msg = tk.Label(
+            exit_win,
+            text="¿Está seguro de que desea salir?\n\nPresione ESCAPE nuevamente para confirmar la salida,\no ENTER para cancelar.",
+            bg=self.bg_color,
+            fg=self.accent_color,
+            font=("Arial", 12, "bold"),
+            justify=tk.CENTER
+        )
+        lbl_msg.pack(expand=True, padx=20, pady=20)
+
+        btn_frame = tk.Frame(exit_win, bg=self.bg_color)
+        btn_frame.pack(pady=10)
+
+        btn_cancel = tk.Button(btn_frame, text="Cancelar (Enter)", command=exit_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_cancel.pack(side=tk.LEFT, padx=10)
+        btn_cancel.focus_set()
+
+        btn_confirm = tk.Button(btn_frame, text="Salir (Escape)", command=self.root.destroy, bg="#222222", fg="#FF5555", font=("Arial", 11, "bold"))
+        btn_confirm.pack(side=tk.LEFT, padx=10)
+
+        exit_win.bind("<Escape>", lambda e: self.root.destroy())
+        exit_win.bind("<Return>", lambda e: exit_win.destroy())
 
     def create_widgets(self):
         # Marco superior: Búsqueda
@@ -106,6 +146,7 @@ class MainWindow:
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
+        self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
         self.listbox_results.bind("<i>", lambda e: self.show_video_info())
         self.listbox_results.bind("<I>", lambda e: self.show_video_info())
@@ -205,10 +246,17 @@ class MainWindow:
             duration_str = f"{dur_min} min {dur_sec} seg" if details['duration'] else "Desconocida"
             categories_str = ", ".join(details['categories']) if details['categories'] else "Desconocida"
 
+            upload_date_str = details['upload_date']
+            try:
+                upload = datetime.strptime(details['upload_date'], '%Y%m%d')
+                upload_date_str = upload.strftime("%A, %d de %B de %Y")
+            except ValueError:
+                print("Fecha en formato incorrecto desde origen...")
+
             info_fields = [
                 ("Título", details['title']),
                 ("Canal", details['uploader']),
-                ("Fecha de subida", details['upload_date']),
+                ("Fecha de subida", upload_date_str),
                 ("Duración", duration_str),
                 ("Categoría", categories_str),
                 ("Descripción", details['description'])
@@ -246,10 +294,10 @@ class MainWindow:
             field_frame = tk.Frame(scrollable_frame, bg=self.bg_color, pady=5)
             field_frame.pack(fill=tk.X, padx=5)
 
-            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 10, "bold"), width=15, anchor="w")
+            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 12, "bold"), width=15, anchor="w")
             lbl.pack(side=tk.LEFT, padx=5)
 
-            entry_val = tk.Entry(field_frame, font=("Arial", 11), bg="#111111", fg=self.fg_color, insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+            entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
             entry_val.insert(0, str(value_text))
             entry_val.config(state="readonly")
             entry_val.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
