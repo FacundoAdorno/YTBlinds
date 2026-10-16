@@ -1,0 +1,8 @@
+#Directories
+venv
+__pycache__
+
+#Files
+*.mp3
+*.mp4
+*.pyc

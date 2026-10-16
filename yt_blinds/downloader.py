@@ -106,34 +106,12 @@ class Downloader:
             'title': f"[Modo Sin Dependencia] Resultado simulado para: {query}",
             'url': f"https://www.youtube.com/results?search_query={query}"
         }]
-class Downloader:
-    """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
-    
+
     @staticmethod
-    def get_video_details(url):
-        try:
-            import yt_dlp
-            ydl_opts = {'quiet': True, 'no_warnings': True, 'noproxy': True, 'extract_flat': False}
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                if url.startswith("ytsearch:"):
-                    search_info = ydl.extract_info(url, download=False)
-                    if 'entries' in search_info and search_info['entries']:
-                        entry = search_info['entries'][0]
-                        url = entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
-                
-                info = ydl.extract_info(url, download=False)
-                if info:
-                    return {
-                        'title': info.get('title', 'Desconocido'),
-                        'uploader': info.get('uploader') or info.get('channel', 'Desconocido'),
-                        'upload_date': info.get('upload_date', 'Desconocida'),
-                        'duration': info.get('duration', 0),
-                        'categories': info.get('categories', ['Desconocida']),
-                        'description': info.get('description', 'Sin descripción')
-                    }
-        except Exception as e:
-            pass
-        return None
+    def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None):
+        import threading
+        from .accessibility import AccessibilityManager
+
         def run():
             if not output_path:
                 download_dir = os.path.expanduser("~/Downloads")
