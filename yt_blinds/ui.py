@@ -107,21 +107,42 @@ class MainWindow:
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
+        self.listbox_results.bind("<i>", lambda e: self.show_video_info())
+        self.listbox_results.bind("<I>", lambda e: self.show_video_info())
 
     def show_help(self):
         help_text = (
-            "Ayuda de Atajos de Teclado (YTBlinds):\n\n"
             "• Tab / Shift+Tab: Moverse entre elementos.\n"
             "• Alt + B: Ir al cuadro de búsqueda.\n"
             "• Enter en Búsqueda: Ejecutar búsqueda.\n"
             "• Flechas Arriba/Abajo: Navegar por los resultados.\n"
+            "• I: Ver información detallada del video (campos navegables por Tab).\n"
             "• Enter en Resultado o Alt + V: Descargar como Video.\n"
             "• Alt + A: Descargar como Audio MP3.\n"
             "• Alt + U: Actualizar yt-dlp a la última versión.\n"
             "• F1: Mostrar esta ayuda."
         )
         AccessibilityManager.announce("Mostrando ventana de ayuda.")
-        messagebox.showinfo("Ayuda de Atajos - YTBlinds", help_text)
+
+        # Ventana modal personalizada para asegurar ajuste automático y accesibilidad
+        help_win = tk.Toplevel(self.root)
+        help_win.title("Ayuda de Atajos - YTBlinds")
+        help_win.geometry("500x400")
+        help_win.configure(bg=self.bg_color)
+
+        lbl_title = tk.Label(help_win, text="Ayuda de Atajos (Presione Escape para cerrar)", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
+        lbl_title.pack(anchor=tk.W, padx=15, pady=10)
+
+        txt_help = tk.Text(help_win, wrap=tk.WORD, bg="#111111", fg=self.fg_color, font=("Arial", 14), padx=10, pady=10, relief=tk.SOLID, bd=1)
+        txt_help.insert(tk.END, help_text)
+        txt_help.config(state=tk.DISABLED)
+        txt_help.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+        txt_help.focus_set()
+
+        btn_close = tk.Button(help_win, text="Cerrar (Escape)", command=help_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_close.pack(pady=15)
+
+        help_win.bind("<Escape>", lambda e: help_win.destroy())
 
     def perform_search(self):
         query = self.entry_search.get().strip()
@@ -147,6 +168,99 @@ class MainWindow:
             self.root.after(0, lambda: self.update_results_ui(source_desc))
 
         threading.Thread(target=search_thread, daemon=True).start()
+
+    def show_video_info(self):
+        selection = self.listbox_results.curselection()
+        if not selection:
+            AccessibilityManager.announce("Ningún elemento seleccionado para ver información.")
+            messagebox.showwarning("Aviso", "Seleccione un video de la lista para ver su información detallada.")
+            return
+
+        index = selection[0]
+        item = self.current_results[index]
+        url = item['url']
+
+        self.lbl_status.config(text=f"Obteniendo información detallada...")
+        AccessibilityManager.announce("Obteniendo información detallada del video, por favor espere.")
+
+        def fetch_info_thread():
+            details = Downloader.get_video_details(url)
+            self.root.after(0, lambda: self._display_video_info(details, item['title']))
+
+        threading.Thread(target=fetch_info_thread, daemon=True).start()
+
+    def _display_video_info(self, details, fallback_title):
+        if not details:
+            info_fields = [
+                ("Título", fallback_title),
+                ("Canal", "Desconocido"),
+                ("Fecha de subida", "Desconocida"),
+                ("Duración", "Desconocida"),
+                ("Categoría", "Desconocida"),
+                ("Descripción", "No disponible")
+            ]
+        else:
+            dur_min = details['duration'] // 60 if details['duration'] else 0
+            dur_sec = details['duration'] % 60 if details['duration'] else 0
+            duration_str = f"{dur_min} min {dur_sec} seg" if details['duration'] else "Desconocida"
+            categories_str = ", ".join(details['categories']) if details['categories'] else "Desconocida"
+
+            info_fields = [
+                ("Título", details['title']),
+                ("Canal", details['uploader']),
+                ("Fecha de subida", details['upload_date']),
+                ("Duración", duration_str),
+                ("Categoría", categories_str),
+                ("Descripción", details['description'])
+            ]
+
+        AccessibilityManager.announce("Información detallada cargada. Use Tab para navegar entre los metadatos.")
+
+        # Ventana modal accesible de información con campos navegables por Tab
+        info_win = tk.Toplevel(self.root)
+        info_win.title("Información Detallada del Video")
+        info_win.geometry("650x550")
+        info_win.configure(bg=self.bg_color)
+
+        lbl_title = tk.Label(info_win, text="Detalles del Video (Use Tab para navegar, Escape para cerrar)", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
+        lbl_title.pack(anchor=tk.W, padx=10, pady=10)
+
+        # Contenedor con scroll
+        canvas = tk.Canvas(info_win, bg=self.bg_color, highlightthickness=0)
+        scrollbar = tk.Scrollbar(info_win, orient=tk.VERTICAL, command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg=self.bg_color)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Crear campos individuales navegables mediante Tab (Entry de sola lectura)
+        for label_text, value_text in info_fields:
+            field_frame = tk.Frame(scrollable_frame, bg=self.bg_color, pady=5)
+            field_frame.pack(fill=tk.X, padx=5)
+
+            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 10, "bold"), width=15, anchor="w")
+            lbl.pack(side=tk.LEFT, padx=5)
+
+            entry_val = tk.Entry(field_frame, font=("Arial", 11), bg="#111111", fg=self.fg_color, insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+            entry_val.insert(0, str(value_text))
+            entry_val.config(state="readonly")
+            entry_val.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        # Botón cerrar al final del Tab
+        btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_close.pack(pady=15, padx=5, anchor=tk.W)
+
+        info_win.bind("<Escape>", lambda e: info_win.destroy())
+        # Dar foco al primer campo navegable
+        scrollable_frame.winfo_children()[0].winfo_children()[1].focus_set()
 
     def update_results_ui(self, source_desc=""):
         self.listbox_results.delete(0, tk.END)

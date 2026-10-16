@@ -20,3 +20,5 @@
 - Si necesitas elegir colores, elige de alto contraste, para personas con visión disminuida.
 - Utilizar virtualenv.
 - Las búsquedas sólo las realizará dentro de Youtube. Retorna como máximo 40 resultados.
+- Cada vez que hago una PREGUNTA, responde sin utilizar el código, a menos que lo solicite. Explayate en la explicación solo cuando lo pida.
+- Para resolver cuestiones técnicas, ignora todo lo mismo que se ignora en .gitignore.

@@ -6,12 +6,12 @@ import json
 
 class Downloader:
     """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
-    
+
     @staticmethod
     def search_videos(query, max_results=40):
         if not query.strip():
             return []
-        
+
         # Si la consulta es una URL directa de YouTube
         if query.startswith("http://") or query.startswith("https://"):
             return [{
@@ -25,11 +25,11 @@ class Downloader:
             import yt_dlp
         except ImportError:
             return Downloader._fallback_search(query, max_results)
-        
+
         # Búsqueda mediante la API pública de sugerencias de YouTube (No requiere proxy de red restringido)
         results = []
         source_used = "Desconocido"
-        
+
         # 1. Intentar búsqueda directa con yt-dlp
         try:
             import yt_dlp
@@ -64,15 +64,15 @@ class Downloader:
                 import urllib.request
                 import urllib.parse
                 import json
-                
+
                 encoded_query = urllib.parse.quote(query)
                 suggestions_url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={encoded_query}"
-                
+
                 req = urllib.request.Request(
                     suggestions_url,
                     headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
                 )
-                
+
                 with urllib.request.urlopen(req, timeout=5) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     if len(data) > 1 and isinstance(data[1], list):
@@ -112,6 +112,92 @@ class Downloader:
         import threading
         from .accessibility import AccessibilityManager
 
+        def run():
+            if not output_path:
+                download_dir = os.path.expanduser("~/Downloads")
+                if not os.path.exists(download_dir):
+                    download_dir = os.getcwd()
+            else:
+                download_dir = output_path
+
+            try:
+                import yt_dlp
+            except ImportError:
+                if completion_callback:
+                    completion_callback(False, "yt-dlp no está instalado. Instálelo o use la opción de actualización.")
+                return
+
+            ydl_opts = {
+                'outtmpl': os.path.join(download_dir, '%(title)s.%(ext)s'),
+                'noplaylist': True,
+                'noproxy': True,
+            }
+
+            if download_type == 'audio':
+                ydl_opts.update({
+                    'format': 'bestaudio/best',
+                    'postprocessors': [{
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': 'mp3',
+                        'preferredquality': '192',
+                    }],
+                })
+            else:
+                ydl_opts.update({
+                    'format': 'bestvideo+bestaudio/best',
+                })
+
+            if progress_callback:
+                def hook(d):
+                    if d['status'] == 'downloading':
+                        p = d.get('_percent_str', '0%').strip()
+                        progress_callback(f"Descargando: {p}")
+                    elif d['status'] == 'finished':
+                        progress_callback("Descarga finalizada. Procesando archivo...")
+                ydl_opts['progress_hooks'] = [hook]
+
+            try:
+                AccessibilityManager.announce("Iniciando descarga...")
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([url])
+                AccessibilityManager.announce("Descarga completada con éxito.")
+                if completion_callback:
+                    completion_callback(True, "Descarga completada con éxito.")
+            except Exception as e:
+                err_msg = f"Error en la descarga: {str(e)}"
+                AccessibilityManager.announce(err_msg)
+                if completion_callback:
+                    completion_callback(False, err_msg)
+
+        thread = threading.Thread(target=run)
+        thread.daemon = True
+        thread.start()
+
+    @staticmethod
+    def get_video_details(url):
+        try:
+            import yt_dlp
+            ydl_opts = {'quiet': True, 'no_warnings': True, 'noproxy': True, 'extract_flat': False}
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                if url.startswith("ytsearch:"):
+                    search_info = ydl.extract_info(url, download=False)
+                    if 'entries' in search_info and search_info['entries']:
+                        entry = search_info['entries'][0]
+                        url = entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
+
+                info = ydl.extract_info(url, download=False)
+                if info:
+                    return {
+                        'title': info.get('title', 'Desconocido'),
+                        'uploader': info.get('uploader') or info.get('channel', 'Desconocido'),
+                        'upload_date': info.get('upload_date', 'Desconocida'),
+                        'duration': info.get('duration', 0),
+                        'categories': info.get('categories', ['Desconocida']),
+                        'description': info.get('description', 'Sin descripción')
+                    }
+        except Exception as e:
+            pass
+        return None
         def run():
             if not output_path:
                 download_dir = os.path.expanduser("~/Downloads")
