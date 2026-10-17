@@ -6,8 +6,12 @@ import pyttsx3
 
 _nvda_dll = None
 engine = None   # PyTTSx3 Engine
-if platform.system() == "Windows":
+
+
+def load_NVDA_dll():
+    """Carga la libreria de NVDA correspondiente a la arquitectura de Python que estés ejecutando."""
     import struct
+    global _nvda_dll
     try:
         py_arch =  struct.calcsize("P") * 8;
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,18 +27,38 @@ if platform.system() == "Windows":
     except Exception as e:
         print("Error al cargar la DLL:", repr(e))
 
-else:   # otherwise is Linux
+def load_PYTTS():
+    """Carga el engine de PyTTSx3, el utilizado por defecto por la aplicación en caso de no contar con NVDA."""
+    global engine
+    # TODO: en el futuro se podría cambiar por PIPER-TTS (https://github.com/Bigbynth/piper-tts)
     engine = pyttsx3.init()
     # Cambiar la voz a español
     voices = engine.getProperty('voices')
     for voice in voices:
         # Busca una voz que contenga 'spanish' o 'es' en sus idiomas
-        if 'es' in voice.languages or 'spanish' in voice.name.lower():
-            engine.setProperty('voice', voice.id)
+        if "es-419" in voice.id.lower():
+            engine.setProperty("voice", voice.id)
+            print("Voz seleccionada:", voice.id)
             break
 
     # Ajustar velocidad (opcional)
     engine.setProperty('rate', 140)
+
+
+### CARGANDO LIBRERIAS
+if platform.system() == "Windows":
+    load_NVDA_dll()
+    if _nvda_dll is not None and _nvda_dll.nvdaController_testIfRunning() > 0:
+        print("[ERROR] Debe iniciar NVDA para poder utilizar. Se utilizará el TextToSpeech por defecto de esta aplicación.")
+        print("Si inicia NVDA, tiene que cerrar y abrir nuevamente esta aplicación")
+        _nvda_dll = None    # La seteamos en None ya que NVDA no está actualmente activo.
+        load_PYTTS()
+
+else:   # otherwise is Linux
+    load_PYTTS()
+
+### FIN CARGANDO LIBRERIAS
+
 
 class AccessibilityManager:
     @staticmethod
@@ -53,6 +77,7 @@ class AccessibilityManager:
                     print("ERROR - Engine pyttsx3 no inicializado...")
                     return
                 try:
+                    print("Hablando por PyTTSx3...")
                     engine.say(text)
                     engine.runAndWait()
                 except Exception as e:
