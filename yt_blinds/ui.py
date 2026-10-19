@@ -32,6 +32,7 @@ class MainWindow:
         self.style.configure("TLabel", background=self.bg_color, foreground=self.fg_color, font=("Arial", 12, "bold"))
         self.style.configure("TButton", background="#222222", foreground=self.accent_color, font=("Arial", 12, "bold"), borderwidth=2)
         self.style.map("TButton", background=[('active', '#444444')])
+        self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.accent_color, darkcolor=self.accent_color, lightcolor=self.accent_color, bordercolor="#444444")
 
         self.create_widgets()
         self.bind_shortcuts()
@@ -89,9 +90,9 @@ class MainWindow:
         self.entry_search.bind("<Key>", self.on_search_key)
         self.entry_search.bind("<Control-a>", lambda e: (self.entry_search.select_range(0, tk.END), "break")[1])
 
-        btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
-        btn_search.pack(anchor=tk.W, pady=2)
-        btn_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Buscar (Enter)"))
+        self.btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        self.btn_search.pack(anchor=tk.W, pady=2)
+        self.btn_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Buscar (Enter)"))
 
         # Marco central: Resultados de Búsqueda
         results_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=5)
@@ -143,7 +144,12 @@ class MainWindow:
 
         self.lbl_status = tk.Label(status_frame, text="Listo.", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
         self.lbl_status.pack(anchor=tk.W)
-        status_frame.bind("<FocusIn>", lambda e: accessibility_manager.announce("Estado actual: ") + self.lbl_status.cget("text"))
+
+        self.progress_bar = ttk.Progressbar(status_frame, orient="horizontal", length=300, mode="determinate", maximum=100, style="Horizontal.TProgressbar")
+        self.progress_bar.pack(fill=tk.X, pady=5)
+        self.progress_bar['value'] = 0
+
+        status_frame.bind("<FocusIn>", lambda e: accessibility_manager.announce("Estado actual: " + self.lbl_status.cget("text")))
 
         self.current_results = []
 
@@ -407,12 +413,43 @@ class MainWindow:
 
     def _start_real_download(self, url, download_type):
         self.lbl_status.config(text=f"Iniciando descarga...")
+        self.progress_bar['value'] = 0
+        self.last_announced_percent = -1
+
+        # Deshabilitar controles durante la descarga
+        self.entry_search.config(state=tk.DISABLED)
+        self.btn_search.config(state=tk.DISABLED)
+        self.btn_video.config(state=tk.DISABLED)
+        self.btn_audio.config(state=tk.DISABLED)
+        self.btn_update.config(state=tk.DISABLED)
 
         def progress(msg):
             self.root.after(0, lambda: self.lbl_status.config(text=msg))
+            try:
+                if "%" in msg:
+                    import re
+                    clean_msg = re.sub(r'\x1b\[[0-9;]*m', '', msg)
+                    percent_str = clean_msg.split(":")[-1].replace("%", "").strip()
+                    val = float(percent_str)
+                    self.root.after(0, lambda v=val: self.progress_bar.config(value=v))
+
+                    ival = int(val)
+                    if ival in (25, 50, 75, 100) and ival != self.last_announced_percent:
+                        self.last_announced_percent = ival
+                        accessibility_manager.announce(f"Descargando: {ival}%")
+            except Exception:
+                pass
 
         def completion(success, msg):
-            self.root.after(0, lambda: messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg))
+            self.root.after(0, lambda: [
+                self.progress_bar.config(value=100 if success else 0),
+                self.entry_search.config(state=tk.NORMAL),
+                self.btn_search.config(state=tk.NORMAL),
+                self.btn_video.config(state=tk.NORMAL),
+                self.btn_audio.config(state=tk.NORMAL),
+                self.btn_update.config(state=tk.NORMAL),
+                messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
+            ])
 
         Downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion)
 
