@@ -110,7 +110,7 @@ class Downloader:
     @staticmethod
     def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None):
         import threading
-        from .accessibility import AccessibilityManager
+        from .accessibility import accessibility_manager
 
         def run():
             if not output_path:
@@ -157,15 +157,15 @@ class Downloader:
                 ydl_opts['progress_hooks'] = [hook]
 
             try:
-                AccessibilityManager.announce("Iniciando descarga...")
+                accessibility_manager.announce("Iniciando descarga...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([url])
-                AccessibilityManager.announce("Descarga completada con éxito.")
+                accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:
                     completion_callback(True, "Descarga completada con éxito.")
             except Exception as e:
                 err_msg = f"Error en la descarga: {str(e)}"
-                AccessibilityManager.announce(err_msg)
+                accessibility_manager.announce(err_msg)
                 if completion_callback:
                     completion_callback(False, err_msg)
 
@@ -198,63 +198,3 @@ class Downloader:
         except Exception as e:
             pass
         return None
-        def run():
-            if not output_path:
-                download_dir = os.path.expanduser("~/Downloads")
-                if not os.path.exists(download_dir):
-                    download_dir = os.getcwd()
-            else:
-                download_dir = output_path
-
-            try:
-                import yt_dlp
-            except ImportError:
-                if completion_callback:
-                    completion_callback(False, "yt-dlp no está instalado. Instálelo o use la opción de actualización.")
-                return
-
-            ydl_opts = {
-                'outtmpl': os.path.join(download_dir, '%(title)s.%(ext)s'),
-                'noplaylist': True,
-                'noproxy': True,
-            }
-
-            if download_type == 'audio':
-                ydl_opts.update({
-                    'format': 'bestaudio/best',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'mp3',
-                        'preferredquality': '192',
-                    }],
-                })
-            else:
-                ydl_opts.update({
-                    'format': 'bestvideo+bestaudio/best',
-                })
-
-            if progress_callback:
-                def hook(d):
-                    if d['status'] == 'downloading':
-                        p = d.get('_percent_str', '0%').strip()
-                        progress_callback(f"Descargando: {p}")
-                    elif d['status'] == 'finished':
-                        progress_callback("Descarga finalizada. Procesando archivo...")
-                ydl_opts['progress_hooks'] = [hook]
-
-            try:
-                AccessibilityManager.announce("Iniciando descarga...")
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-                AccessibilityManager.announce("Descarga completada con éxito.")
-                if completion_callback:
-                    completion_callback(True, "Descarga completada con éxito.")
-            except Exception as e:
-                err_msg = f"Error en la descarga: {str(e)}"
-                AccessibilityManager.announce(err_msg)
-                if completion_callback:
-                    completion_callback(False, err_msg)
-
-        thread = threading.Thread(target=run)
-        thread.daemon = True
-        thread.start()

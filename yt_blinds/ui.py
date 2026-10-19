@@ -5,7 +5,7 @@ from datetime import datetime
 import locale
 from .downloader import Downloader
 from .updater import Updater
-from .accessibility import AccessibilityManager
+from .accessibility import accessibility_manager
 
 class MainWindow:
     """Ventana principal accesible para personas no videntes."""
@@ -40,10 +40,10 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
         self.root.bind("<Escape>", lambda e: self.confirm_exit())
 
-        AccessibilityManager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir.")
+        accessibility_manager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir.")
 
     def confirm_exit(self):
-        AccessibilityManager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar.")
+        accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar.")
 
         exit_win = tk.Toplevel(self.root)
         exit_win.title("Confirmar Salida - YTBlinds")
@@ -142,7 +142,7 @@ class MainWindow:
     def bind_shortcuts(self):
         # Atajos de teclado accesibles globales
         self.root.bind("<F1>", lambda e: self.show_help())
-        self.root.bind("<Alt-b>", lambda e: self.entry_search.focus_set())
+        self.root.bind("<Alt-b>", lambda e: self.on_search_focus())
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
@@ -152,18 +152,19 @@ class MainWindow:
         self.listbox_results.bind("<I>", lambda e: self.show_video_info())
 
     def show_help(self):
-        help_text = (
-            "• Tab / Shift+Tab: Moverse entre elementos.\n"
-            "• Alt + B: Ir al cuadro de búsqueda.\n"
-            "• Enter en Búsqueda: Ejecutar búsqueda.\n"
-            "• Flechas Arriba/Abajo: Navegar por los resultados.\n"
-            "• I: Ver información detallada del video (campos navegables por Tab).\n"
-            "• Enter en Resultado o Alt + V: Descargar como Video.\n"
-            "• Alt + A: Descargar como Audio MP3.\n"
-            "• Alt + U: Actualizar yt-dlp a la última versión.\n"
-            "• F1: Mostrar esta ayuda."
+        help_text_tuple = (
+            "• Teclas Tab y Shift+Tab: Moverse entre elementos.\n",
+            "• Teclas Alt + B: Ir al cuadro de búsqueda.\n",
+            "• Tecla Enter (al escribir en Búsqueda): Ejecutar búsqueda.\n",
+            "• Flechas Arriba/Abajo: Navegar por los resultados de búsqueda.\n",
+            "• Tecla I: Ver información detallada del video (campos navegables por Tab).\n",
+            "• Tecla Enter en Resultado ó Teclas Alt + V: Comenzar a descargar resultado como Video.\n",
+            "• Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
+            "• Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
+            "• Tecla F1: Mostrar esta ayuda."
         )
-        AccessibilityManager.announce("Mostrando ventana de ayuda.")
+
+        help_text = "".join(help_text_tuple)
 
         # Ventana modal personalizada para asegurar ajuste automático y accesibilidad
         help_win = tk.Toplevel(self.root)
@@ -185,15 +186,21 @@ class MainWindow:
 
         help_win.bind("<Escape>", lambda e: help_win.destroy())
 
+        ## Leyendo los textos de ayuda.
+        accessibility_manager.announce("Mostrando ventana de ayuda.")
+        for teclas_atajos in help_text_tuple:
+            accessibility_manager.announce(teclas_atajos)
+
+
     def perform_search(self):
         query = self.entry_search.get().strip()
         if not query:
-            AccessibilityManager.announce("Escriba un término de búsqueda o URL.")
+            accessibility_manager.announce("Escriba un término de búsqueda o URL.")
             messagebox.showwarning("Aviso", "Escriba un término de búsqueda o URL de YouTube.")
             return
 
         self.lbl_status.config(text="Buscando...")
-        AccessibilityManager.announce("Buscando videos, por favor espere.")
+        accessibility_manager.announce("Buscando videos, por favor espere.")
 
         def search_thread():
             if query.startswith("http://") or query.startswith("https://"):
@@ -213,7 +220,7 @@ class MainWindow:
     def show_video_info(self):
         selection = self.listbox_results.curselection()
         if not selection:
-            AccessibilityManager.announce("Ningún elemento seleccionado para ver información.")
+            accessibility_manager.announce("Ningún elemento seleccionado para ver información.")
             messagebox.showwarning("Aviso", "Seleccione un video de la lista para ver su información detallada.")
             return
 
@@ -222,7 +229,7 @@ class MainWindow:
         url = item['url']
 
         self.lbl_status.config(text=f"Obteniendo información detallada...")
-        AccessibilityManager.announce("Obteniendo información detallada del video, por favor espere.")
+        accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
 
         def fetch_info_thread():
             details = Downloader.get_video_details(url)
@@ -262,7 +269,7 @@ class MainWindow:
                 ("Descripción", details['description'])
             ]
 
-        AccessibilityManager.announce("Información detallada cargada. Use Tab para navegar entre los metadatos.")
+        accessibility_manager.announce("Información detallada cargada. Use Tab para navegar entre los metadatos.")
 
         # Ventana modal accesible de información con campos navegables por Tab
         info_win = tk.Toplevel(self.root)
@@ -321,7 +328,7 @@ class MainWindow:
         self.listbox_results.delete(0, tk.END)
         if not self.current_results:
             self.lbl_status.config(text="No se encontraron resultados.")
-            AccessibilityManager.announce("No se encontraron resultados.")
+            accessibility_manager.announce("No se encontraron resultados.")
             return
 
         for item in self.current_results:
@@ -329,22 +336,28 @@ class MainWindow:
 
         status_msg = f"Se encontraron {len(self.current_results)} resultados (Fuente: {source_desc})."
         self.lbl_status.config(text=status_msg)
-        AccessibilityManager.announce(f"Se encontraron {len(self.current_results)} resultados usando {source_desc}.")
+        accessibility_manager.announce(f"Se encontraron {len(self.current_results)} resultados.")
         self.listbox_results.focus_set()
         if self.current_results:
             self.listbox_results.selection_set(0)
+            self.on_select_item(None)
 
     def on_select_item(self, event):
         selection = self.listbox_results.curselection()
         if selection:
             index = selection[0]
             title = self.current_results[index]['title']
-            AccessibilityManager.announce(f"Seleccionado: {title}")
+            accessibility_manager.announce(f"Seleccionado: {title}")
+
+    def on_search_focus(self):
+        self.entry_search.focus_set()
+        self.entry_search.select_range(0, "end")
+        accessibility_manager.announce("Moviendo cursor a campo de búsqueda. Escriba lo que desee buscar.")
 
     def download_selected(self, download_type):
         selection = self.listbox_results.curselection()
         if not selection:
-            AccessibilityManager.announce("Ningún elemento seleccionado para descargar.")
+            accessibility_manager.announce("Ningún elemento seleccionado para descargar.")
             messagebox.showwarning("Aviso", "Seleccione un video de la lista para descargar.")
             return
 
@@ -388,13 +401,13 @@ class MainWindow:
 
     def update_ytdlp(self):
         self.lbl_status.config(text="Actualizando yt-dlp...")
-        AccessibilityManager.announce("Actualizando yt-dlp, por favor espere.")
+        accessibility_manager.announce("Actualizando yt-dlp, por favor espere.")
 
         def update_thread():
             success, msg = Updater.update_yt_dlp()
             def finish():
                 self.lbl_status.config(text=msg)
-                AccessibilityManager.announce(msg)
+                accessibility_manager.announce(msg)
                 messagebox.showinfo("Actualización", msg)
             self.root.after(0, finish)
 
