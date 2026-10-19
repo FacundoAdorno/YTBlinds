@@ -16,5 +16,11 @@ class TestYTBlinds(unittest.TestCase):
         # Should execute without errors on Linux / test environment
         accessibility_manager.announce("Prueba de accesibilidad")
 
+    def test_accessibility_stop_announces(self):
+        accessibility_manager.announce("Anuncio 1")
+        accessibility_manager.announce("Anuncio 2")
+        accessibility_manager.stop_announces()
+        self.assertTrue(accessibility_manager.speech_queue.empty())
+
 if __name__ == '__main__':
     unittest.main()

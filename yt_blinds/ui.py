@@ -14,7 +14,7 @@ class MainWindow:
         locale.setlocale(locale.LC_TIME, "es_ES")
 
         self.root = root
-        self.root.title("YTBlinds - Descargador Accesible de YouTube")
+        self.root.title("Descargador Accesible de YouTube - YTBlinds")
         self.root.geometry("800x650")
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
@@ -41,7 +41,7 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
         self.root.bind("<Escape>", lambda e: self.confirm_exit())
 
-        self.root.after(300, lambda: accessibility_manager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir."))
+        self.root.after(300, lambda: accessibility_manager.announce("Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir."))
         self.root.after(310, lambda: self.entry_search.focus_set())
 
     def confirm_exit(self):
@@ -210,6 +210,8 @@ class MainWindow:
 
 
     def perform_search(self):
+        accessibility_manager.stop_announces()
+
         query = self.entry_search.get().strip()
         if not query:
             accessibility_manager.announce("Escriba un término de búsqueda o URL.")
@@ -255,6 +257,8 @@ class MainWindow:
         threading.Thread(target=fetch_info_thread, daemon=True).start()
 
     def _display_video_info(self, details, fallback_title):
+        accessibility_manager.stop_announces()
+
         if not details:
             info_fields = [
                 ("Título", fallback_title),
@@ -349,6 +353,8 @@ class MainWindow:
         scrollable_frame.winfo_children()[0].winfo_children()[1].focus_set()
 
     def update_results_ui(self, source_desc=""):
+        accessibility_manager.stop_announces()
+
         self.listbox_results.delete(0, tk.END)
         if not self.current_results:
             self.lbl_status.config(text="No se encontraron resultados.")
@@ -369,6 +375,7 @@ class MainWindow:
     def on_select_item(self, event):
         selection = self.listbox_results.curselection()
         if selection:
+            accessibility_manager.stop_announces()
             index = selection[0]
             title = self.current_results[index]['title']
             accessibility_manager.announce(f"Seleccionado: {title}")
@@ -385,6 +392,7 @@ class MainWindow:
             accessibility_manager.announce(event.char)
 
     def download_selected(self, download_type):
+        accessibility_manager.stop_announces()
         selection = self.listbox_results.curselection()
         if not selection:
             accessibility_manager.announce("Ningún elemento seleccionado para descargar.")
@@ -431,6 +439,7 @@ class MainWindow:
         self.btn_update.config(state=tk.DISABLED)
 
         def progress(msg):
+            accessibility_manager.stop_announces()
             self.root.after(0, lambda: self.lbl_status.config(text=msg))
             try:
                 if "%" in msg:
@@ -461,6 +470,7 @@ class MainWindow:
         Downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion)
 
     def update_ytdlp(self):
+        accessibility_manager.stop_announces()
         self.lbl_status.config(text="Actualizando yt-dlp...")
         accessibility_manager.announce("Actualizando yt-dlp, por favor espere.")
 

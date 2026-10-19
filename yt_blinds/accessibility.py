@@ -73,6 +73,21 @@ class AccessibilityManager:
 
         self.speech_queue.put(text)
 
+    def stop_announces(self):
+        """Elimina los anuncios siguientes a procesar en la cola."""
+        # if platform.system() == "Windows" and self._nvda_dll is not None:
+        #     try:
+        #         self._nvda_dll.nvdaController_cancelSpeech()
+        #     except Exception:
+        #         pass
+
+        while not self.speech_queue.empty():
+            try:
+                self.speech_queue.get_nowait()
+                self.speech_queue.task_done()
+            except queue.Empty:
+                break
+
     def _process_queue(self):
         while True:
             text = self.speech_queue.get()
