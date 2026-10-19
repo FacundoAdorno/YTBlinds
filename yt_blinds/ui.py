@@ -3,6 +3,9 @@ import threading
 import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
+from typing import NamedTuple
+
+from yt_blinds.ui_.history_ui import HistoryWindow
 
 from .accessibility import accessibility_manager
 from .downloader import Downloader
@@ -20,21 +23,17 @@ class MainWindow:
         self.root.geometry("800x650")
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
-        self.bg_color = "#000000"
-        self.fg_color = "#FFFFFF"
-        self.accent_color = "#FFFF00" # Amarillo brillante
-        self.select_color = "#333333"
-
-        self.root.configure(bg=self.bg_color)
+        self.color_scheme = ColorScheme(bg_color="#000000",fg_color="#FFFFFF", accent_color="#FFFF00",select_color="#333333")
+        self.root.configure(bg=self.color_scheme.bg_color)
 
         # Estilo ttk para alto contraste
         self.style = ttk.Style()
         self.style.theme_use('default')
-        self.style.configure(".", background=self.bg_color, foreground=self.fg_color, fieldbackground=self.bg_color)
-        self.style.configure("TLabel", background=self.bg_color, foreground=self.fg_color, font=("Arial", 12, "bold"))
-        self.style.configure("TButton", background="#222222", foreground=self.accent_color, font=("Arial", 12, "bold"), borderwidth=2)
+        self.style.configure(".", background=self.color_scheme.bg_color, foreground=self.color_scheme.fg_color, fieldbackground=self.color_scheme.bg_color)
+        self.style.configure("TLabel", background=self.color_scheme.bg_color, foreground=self.color_scheme.fg_color, font=("Arial", 12, "bold"))
+        self.style.configure("TButton", background="#222222", foreground=self.color_scheme.accent_color, font=("Arial", 12, "bold"), borderwidth=2)
         self.style.map("TButton", background=[('active', '#444444')])
-        self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.accent_color, darkcolor=self.accent_color, lightcolor=self.accent_color, bordercolor="#444444")
+        self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.color_scheme.accent_color, darkcolor=self.color_scheme.accent_color, lightcolor=self.color_scheme.accent_color, bordercolor="#444444")
 
         self.create_widgets()
         self.bind_shortcuts()
@@ -52,23 +51,23 @@ class MainWindow:
         exit_win = tk.Toplevel(self.root)
         exit_win.title("Confirmar Salida - YTBlinds")
         exit_win.geometry("450x200")
-        exit_win.configure(bg=self.bg_color)
+        exit_win.configure(bg=self.color_scheme.bg_color)
         exit_win.grab_set() # Hacer ventana modal
 
         lbl_msg = tk.Label(
             exit_win,
             text="¿Está seguro de que desea salir?\n\nPresione ESCAPE nuevamente para confirmar la salida,\no ENTER para cancelar.",
-            bg=self.bg_color,
-            fg=self.accent_color,
+            bg=self.color_scheme.bg_color,
+            fg=self.color_scheme.accent_color,
             font=("Arial", 12, "bold"),
             justify=tk.CENTER
         )
         lbl_msg.pack(expand=True, padx=20, pady=20)
 
-        btn_frame = tk.Frame(exit_win, bg=self.bg_color)
+        btn_frame = tk.Frame(exit_win, bg=self.color_scheme.bg_color)
         btn_frame.pack(pady=10)
 
-        btn_cancel = tk.Button(btn_frame, text="Cancelar (Enter)", command=exit_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_cancel = tk.Button(btn_frame, text="Cancelar (Enter)", command=exit_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_cancel.pack(side=tk.LEFT, padx=10)
         btn_cancel.focus_set()
 
@@ -80,39 +79,39 @@ class MainWindow:
 
     def create_widgets(self):
         # Marco superior: Búsqueda
-        search_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=10)
+        search_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=10)
         search_frame.pack(fill=tk.X)
 
-        lbl_search = tk.Label(search_frame, text="Buscar video o pegar URL (Alt+B):", bg=self.bg_color, fg=self.accent_color, font=("Arial", 12, "bold"))
+        lbl_search = tk.Label(search_frame, text="Buscar video o pegar URL (Alt+B):", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 12, "bold"))
         lbl_search.pack(anchor=tk.W, pady=2)
 
-        self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.fg_color, insertbackground=self.fg_color)
+        self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.color_scheme.fg_color, insertbackground=self.color_scheme.fg_color)
         self.entry_search.pack(fill=tk.X, pady=5)
         self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Posicionando cursor en campo de búsqueda. Escriba un término o URL de YouTube y presione Enter."))
         self.entry_search.bind("<Key>", self.on_search_key)
         self.entry_search.bind("<Control-a>", lambda e: (self.entry_search.select_range(0, tk.END), "break")[1])
 
-        self.btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        self.btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_search.pack(anchor=tk.W, pady=2)
         self.btn_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Buscar (Enter)"))
 
         # Marco central: Resultados de Búsqueda
-        results_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=5)
+        results_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=5)
         results_frame.pack(fill=tk.BOTH, expand=True)
 
-        lbl_results = tk.Label(results_frame, text="Resultados (Use Flechas Arriba/Abajo para navegar):", bg=self.bg_color, fg=self.fg_color, font=("Arial", 11, "bold"))
+        lbl_results = tk.Label(results_frame, text="Resultados (Use Flechas Arriba/Abajo para navegar):", bg=self.color_scheme.bg_color, fg=self.color_scheme.fg_color, font=("Arial", 11, "bold"))
         lbl_results.pack(anchor=tk.W)
 
         # Listbox con scrollbar accesible
-        list_container = tk.Frame(results_frame, bg=self.bg_color)
+        list_container = tk.Frame(results_frame, bg=self.color_scheme.bg_color)
         list_container.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.listbox_results = tk.Listbox(
             list_container,
             font=("Arial", 12),
             bg="#111111",
-            fg=self.fg_color,
-            selectbackground=self.accent_color,
+            fg=self.color_scheme.fg_color,
+            selectbackground=self.color_scheme.accent_color,
             selectforeground="#000000",
             activestyle='dotbox'
         )
@@ -125,26 +124,30 @@ class MainWindow:
         self.listbox_results.config(yscrollcommand=scrollbar.set)
 
         # Marco inferior: Acciones y Estado
-        action_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=10)
+        action_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=10)
         action_frame.pack(fill=tk.X)
 
-        self.btn_video = tk.Button(action_frame, text="Descargar Video (Alt+V)", command=lambda: self.download_selected("video"), bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        self.btn_video = tk.Button(action_frame, text="Descargar Video (Alt+V)", command=lambda: self.download_selected("video"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_video.pack(side=tk.LEFT, padx=5)
         self.btn_video.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Video (Alt+V)"))
 
-        self.btn_audio = tk.Button(action_frame, text="Descargar Audio MP3 (Alt+A)", command=lambda: self.download_selected("audio"), bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        self.btn_audio = tk.Button(action_frame, text="Descargar Audio MP3 (Alt+A)", command=lambda: self.download_selected("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_audio.pack(side=tk.LEFT, padx=5)
         self.btn_audio.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
+
+        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_history.pack(side=tk.LEFT, padx=5)
+        self.btn_history.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Historial de Descargas (Alt+H)"))
 
         self.btn_update = tk.Button(action_frame, text="Actualizar yt-dlp (Alt+U)", command=self.update_ytdlp, bg="#222222", fg="#00FF00", font=("Arial", 11, "bold"))
         self.btn_update.pack(side=tk.RIGHT, padx=5)
         self.btn_update.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Actualizar yt-dlp (Alt+U)"))
 
         # Estado y Progreso
-        status_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=5)
+        status_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=5)
         status_frame.pack(fill=tk.X)
 
-        self.lbl_status = tk.Label(status_frame, text="Listo.", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
+        self.lbl_status = tk.Label(status_frame, text="Listo.", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.lbl_status.pack(anchor=tk.W)
 
         self.progress_bar = ttk.Progressbar(status_frame, orient="horizontal", length=300, mode="determinate", maximum=100, style="Horizontal.TProgressbar")
@@ -156,11 +159,12 @@ class MainWindow:
         self.current_results = []
 
     def bind_shortcuts(self):
-        # Atajos de teclado accesibles globales
         self.root.bind("<F1>", lambda e: self.show_help())
         self.root.bind("<Alt-b>", lambda e: self.on_search_focus())
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
+        self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
+        self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
@@ -176,6 +180,7 @@ class MainWindow:
             "- Tecla I: Ver información detallada del video (campos navegables por Tab).\n",
             "- Tecla Enter en Resultado ó Teclas Alt + V: Comenzar a descargar resultado como Video.\n",
             "- Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
+            "- Teclas Alt + H: Ver historial de archivos descargados (Videos y Audios).\n",
             "- Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
             "- Tecla F1: Mostrar esta ayuda."
         )
@@ -186,18 +191,18 @@ class MainWindow:
         help_win = tk.Toplevel(self.root)
         help_win.title("Ayuda de Atajos - YTBlinds")
         help_win.geometry("500x400")
-        help_win.configure(bg=self.bg_color)
+        help_win.configure(bg=self.color_scheme.bg_color)
 
-        lbl_title = tk.Label(help_win, text="Ayuda de Atajos (Presione Escape para cerrar)", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
+        lbl_title = tk.Label(help_win, text="Ayuda de Atajos (Presione Escape para cerrar)", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         lbl_title.pack(anchor=tk.W, padx=15, pady=10)
 
-        txt_help = tk.Text(help_win, wrap=tk.WORD, bg="#111111", fg=self.fg_color, font=("Arial", 14), padx=10, pady=10, relief=tk.SOLID, bd=1)
+        txt_help = tk.Text(help_win, wrap=tk.WORD, bg="#111111", fg=self.color_scheme.fg_color, font=("Arial", 14), padx=10, pady=10, relief=tk.SOLID, bd=1)
         txt_help.insert(tk.END, help_text)
         txt_help.config(state=tk.DISABLED)
         txt_help.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
         txt_help.focus_set()
 
-        btn_close = tk.Button(help_win, text="Cerrar (Escape)", command=help_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_close = tk.Button(help_win, text="Cerrar (Escape)", command=help_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_close.pack(pady=15)
 
         help_win.bind("<Escape>", lambda e: help_win.destroy())
@@ -298,15 +303,15 @@ class MainWindow:
         info_win = tk.Toplevel(self.root)
         info_win.title("Información Detallada del Video")
         info_win.geometry("650x550")
-        info_win.configure(bg=self.bg_color)
+        info_win.configure(bg=self.color_scheme.bg_color)
 
-        lbl_title = tk.Label(info_win, text="Detalles del Video (Use Tab para navegar, Escape para cerrar)", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
+        lbl_title = tk.Label(info_win, text="Detalles del Video (Use Tab para navegar, Escape para cerrar)", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         lbl_title.pack(anchor=tk.W, padx=10, pady=10)
 
         # Contenedor con scroll
-        canvas = tk.Canvas(info_win, bg=self.bg_color, highlightthickness=0)
+        canvas = tk.Canvas(info_win, bg=self.color_scheme.bg_color, highlightthickness=0)
         scrollbar = tk.Scrollbar(info_win, orient=tk.VERTICAL, command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg=self.bg_color)
+        scrollable_frame = tk.Frame(canvas, bg=self.color_scheme.bg_color)
 
         scrollable_frame.bind(
             "<Configure>",
@@ -325,29 +330,28 @@ class MainWindow:
         def bloquear_edicion(event):
             return "break"
         for label_text, value_text in info_fields:
-            field_frame = tk.Frame(scrollable_frame, bg=self.bg_color, pady=5)
+            field_frame = tk.Frame(scrollable_frame, bg=self.color_scheme.bg_color, pady=5)
             field_frame.pack(fill=tk.X, padx=5, expand=True)
 
-            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.bg_color, fg=self.accent_color, font=("Arial", 12, "bold"), anchor="w")
+            lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 12, "bold"), anchor="w")
             lbl.pack(anchor=tk.W, padx=5, pady=2)
 
             if label_text == "Descripción":
                 # Usar Textarea accesible con scroll para la descripción
-                txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+                txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1, takefocus=True)
                 txt_val.insert("1.0", str(value_text))
-                txt_val.config(state=tk.NORMAL)
                 txt_val.bind("<Key>", bloquear_edicion)
                 txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
-                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
+                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt)))
             else:
-                entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
+                entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1)
                 entry_val.insert(0, str(value_text))
                 entry_val.config(state="readonly")
                 entry_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
                 entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
 
         # Botón cerrar al final del Tab
-        btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
+        btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_close.pack(pady=15, padx=5, anchor=tk.W)
 
         info_win.bind("<Escape>", lambda e: info_win.destroy())
@@ -404,10 +408,12 @@ class MainWindow:
         index = selection[0]
         item = self.current_results[index]
         url = item['url']
+        video_title = item['title']
+        video_id = item.get('id') or url
 
         # Si es una consulta de sugerencia, resolver la URL real de búsqueda mediante yt-dlp
         if url.startswith("ytsearch:"):
-            self.lbl_status.config(text=f"Buscando enlace directo para: {item['title']}...")
+            self.lbl_status.config(text=f"Buscando enlace directo para: {video_title}...")
             def resolve_and_download():
                 try:
                     import yt_dlp
@@ -415,20 +421,24 @@ class MainWindow:
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         info = ydl.extract_info(url, download=False)
                         if 'entries' in info and info['entries']:
-                            real_url = info['entries'][0].get('url') or f"https://www.youtube.com/watch?v={info['entries'][0].get('id')}"
+                            entry = info['entries'][0]
+                            real_url = entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
+                            resolved_id = entry.get('id') or video_id
                         else:
                             real_url = url
+                            resolved_id = video_id
                 except Exception:
-                    real_url = f"https://www.youtube.com/results?search_query={item['title']}"
+                    real_url = f"https://www.youtube.com/results?search_query={video_title}"
+                    resolved_id = video_id
 
-                self.root.after(0, lambda: self._start_real_download(real_url, download_type))
+                self.root.after(0, lambda: self._start_real_download(real_url, download_type, title=video_title, video_id=resolved_id))
 
             import threading
             threading.Thread(target=resolve_and_download, daemon=True).start()
         else:
-            self._start_real_download(url, download_type)
+            self._start_real_download(url, download_type, title=video_title, video_id=video_id)
 
-    def _start_real_download(self, url, download_type):
+    def _start_real_download(self, url, download_type, title=None, video_id=None):
         self.lbl_status.config(text=f"Iniciando descarga...")
         self.progress_bar['value'] = 0
         self.last_announced_percent = -1
@@ -438,6 +448,7 @@ class MainWindow:
         self.btn_search.config(state=tk.DISABLED)
         self.btn_video.config(state=tk.DISABLED)
         self.btn_audio.config(state=tk.DISABLED)
+        self.btn_history.config(state=tk.DISABLED)
         self.btn_update.config(state=tk.DISABLED)
 
         def progress(msg):
@@ -452,7 +463,7 @@ class MainWindow:
                     self.root.after(0, lambda v=val: self.progress_bar.config(value=v))
 
                     ival = int(val)
-                    if ival in (25, 50, 75, 100) and ival != self.last_announced_percent:
+                    if (ival % 5 == 0 or ival == 100) and ival != self.last_announced_percent:
                         self.last_announced_percent = ival
                         accessibility_manager.announce(f"Descargando: {ival}%")
             except Exception:
@@ -465,11 +476,12 @@ class MainWindow:
                 self.btn_search.config(state=tk.NORMAL),
                 self.btn_video.config(state=tk.NORMAL),
                 self.btn_audio.config(state=tk.NORMAL),
+                self.btn_history.config(state=tk.NORMAL),
                 self.btn_update.config(state=tk.NORMAL),
                 messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
             ])
 
-        Downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion)
+        Downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion, title=title, video_id=video_id)
 
     def update_ytdlp(self):
         accessibility_manager.stop_announces()
@@ -485,3 +497,9 @@ class MainWindow:
             self.root.after(0, finish)
 
         threading.Thread(target=update_thread, daemon=True).start()
+
+class ColorScheme(NamedTuple):
+    bg_color: str
+    fg_color: str
+    accent_color: str
+    select_color: str

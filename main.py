@@ -1,6 +1,6 @@
-import sys
-import subprocess
 import os
+import subprocess
+import sys
 
 try:
     import tkinter as tk
@@ -10,6 +10,7 @@ except ImportError:
     sys.exit(1)
 
 from yt_blinds.ui import MainWindow
+
 
 def main():
     root = tk.Tk()

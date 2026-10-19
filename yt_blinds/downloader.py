@@ -109,10 +109,11 @@ class Downloader:
         }]
 
     @staticmethod
-    def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None):
+    def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None, title=None, video_id=None):
         import threading
 
         from .accessibility import accessibility_manager
+        from .history import history_manager
 
         def run():
             if not output_path:
@@ -121,6 +122,9 @@ class Downloader:
                     download_dir = os.getcwd()
             else:
                 download_dir = output_path
+
+            vid = video_id or url
+            history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
 
             try:
                 import yt_dlp
@@ -161,7 +165,12 @@ class Downloader:
             try:
                 accessibility_manager.announce("Iniciando descarga...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                    info = ydl.extract_info(url, download=True)
+                    downloaded_title = title or (info.get('title') if info else url)
+                    actual_vid = (info.get('id') if info else None) or vid
+
+                history_manager.add_download(actual_vid, downloaded_title, download_dir, download_type)
+
                 accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:
                     completion_callback(True, "Descarga completada con éxito.")
