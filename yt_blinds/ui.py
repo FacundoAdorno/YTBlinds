@@ -86,6 +86,8 @@ class MainWindow:
         self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.fg_color, insertbackground=self.fg_color)
         self.entry_search.pack(fill=tk.X, pady=5)
         self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Posicionando cursor en campo de búsqueda. Escriba un término o URL de YouTube y presione Enter."))
+        self.entry_search.bind("<Key>", self.on_search_key)
+        self.entry_search.bind("<Control-a>", lambda e: (self.entry_search.select_range(0, tk.END), "break")[1])
 
         btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
         btn_search.pack(anchor=tk.W, pady=2)
@@ -361,6 +363,13 @@ class MainWindow:
     def on_search_focus(self):
         self.entry_search.focus_set()
         self.entry_search.select_range(0, "end")
+
+    def on_search_key(self, event):
+        if event.keysym == "space":
+            current_text = self.entry_search.get()
+            accessibility_manager.announce(current_text)
+        elif event.char and event.char.isprintable():
+            accessibility_manager.announce(event.char)
 
     def download_selected(self, download_type):
         selection = self.listbox_results.curselection()
