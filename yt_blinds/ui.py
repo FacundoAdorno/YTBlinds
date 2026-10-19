@@ -1,11 +1,13 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
-import threading
-from datetime import datetime
 import locale
+import threading
+import tkinter as tk
+from datetime import datetime
+from tkinter import messagebox, ttk
+
+from .accessibility import accessibility_manager
 from .downloader import Downloader
 from .updater import Updater
-from .accessibility import accessibility_manager
+
 
 class MainWindow:
     """Ventana principal accesible para personas no videntes."""

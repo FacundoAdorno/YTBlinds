@@ -1,9 +1,11 @@
+import ctypes
 import os
 import platform
-import ctypes
-import threading
 import queue
+import threading
+
 import pyttsx3
+
 
 class AccessibilityManager:
     def __init__(self):

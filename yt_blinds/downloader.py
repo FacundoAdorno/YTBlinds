@@ -1,8 +1,9 @@
+import json
 import os
 import sys
 import urllib.request
 import zipfile
-import json
+
 
 class Downloader:
     """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
@@ -61,9 +62,9 @@ class Downloader:
         # 2. Si yt-dlp no retornó resultados (por restricciones de red/proxy del entorno), usar API de sugerencias JSON
         if not results:
             try:
-                import urllib.request
-                import urllib.parse
                 import json
+                import urllib.parse
+                import urllib.request
 
                 encoded_query = urllib.parse.quote(query)
                 suggestions_url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={encoded_query}"
@@ -110,6 +111,7 @@ class Downloader:
     @staticmethod
     def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None):
         import threading
+
         from .accessibility import accessibility_manager
 
         def run():
