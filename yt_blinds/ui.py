@@ -314,6 +314,10 @@ class MainWindow:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Crear campos individuales navegables mediante Tab
+        valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
+        # Bloquear la escritura y modificación del contenido
+        def bloquear_edicion(event):
+            return "break"
         for label_text, value_text in info_fields:
             field_frame = tk.Frame(scrollable_frame, bg=self.bg_color, pady=5)
             field_frame.pack(fill=tk.X, padx=5, expand=True)
@@ -325,13 +329,16 @@ class MainWindow:
                 # Usar Textarea accesible con scroll para la descripción
                 txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
                 txt_val.insert("1.0", str(value_text))
-                txt_val.config(state=tk.DISABLED)
+                txt_val.config(state=tk.NORMAL)
+                txt_val.bind("<Key>", bloquear_edicion)
                 txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
+                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
             else:
                 entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.fg_color, relief=tk.SOLID, bd=1)
                 entry_val.insert(0, str(value_text))
                 entry_val.config(state="readonly")
                 entry_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
+                entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
 
         # Botón cerrar al final del Tab
         btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
