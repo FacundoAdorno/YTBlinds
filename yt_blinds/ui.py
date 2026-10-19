@@ -40,10 +40,11 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
         self.root.bind("<Escape>", lambda e: self.confirm_exit())
 
-        accessibility_manager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir.")
+        self.root.after(300, lambda: accessibility_manager.announce("YTBlinds iniciado. Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir."))
+        self.root.after(310, lambda: self.entry_search.focus_set())
 
     def confirm_exit(self):
-        accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar.")
+        self.root.after(300, lambda: accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
 
         exit_win = tk.Toplevel(self.root)
         exit_win.title("Confirmar Salida - YTBlinds")
@@ -84,10 +85,11 @@ class MainWindow:
 
         self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.fg_color, insertbackground=self.fg_color)
         self.entry_search.pack(fill=tk.X, pady=5)
-        self.entry_search.focus_set()
+        self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Posicionando cursor en campo de búsqueda. Escriba un término o URL de YouTube y presione Enter."))
 
         btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
         btn_search.pack(anchor=tk.W, pady=2)
+        btn_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Buscar (Enter)"))
 
         # Marco central: Resultados de Búsqueda
         results_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=5)
@@ -123,12 +125,15 @@ class MainWindow:
 
         self.btn_video = tk.Button(action_frame, text="Descargar Video (Alt+V)", command=lambda: self.download_selected("video"), bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
         self.btn_video.pack(side=tk.LEFT, padx=5)
+        self.btn_video.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Video (Alt+V)"))
 
         self.btn_audio = tk.Button(action_frame, text="Descargar Audio MP3 (Alt+A)", command=lambda: self.download_selected("audio"), bg="#222222", fg=self.accent_color, font=("Arial", 11, "bold"))
         self.btn_audio.pack(side=tk.LEFT, padx=5)
+        self.btn_audio.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
 
         self.btn_update = tk.Button(action_frame, text="Actualizar yt-dlp (Alt+U)", command=self.update_ytdlp, bg="#222222", fg="#00FF00", font=("Arial", 11, "bold"))
         self.btn_update.pack(side=tk.RIGHT, padx=5)
+        self.btn_update.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Actualizar yt-dlp (Alt+U)"))
 
         # Estado y Progreso
         status_frame = tk.Frame(self.root, bg=self.bg_color, padx=10, pady=5)
@@ -136,6 +141,7 @@ class MainWindow:
 
         self.lbl_status = tk.Label(status_frame, text="Listo.", bg=self.bg_color, fg=self.accent_color, font=("Arial", 11, "bold"))
         self.lbl_status.pack(anchor=tk.W)
+        status_frame.bind("<FocusIn>", lambda e: accessibility_manager.announce("Estado actual: ") + self.lbl_status.cget("text"))
 
         self.current_results = []
 
@@ -153,15 +159,15 @@ class MainWindow:
 
     def show_help(self):
         help_text_tuple = (
-            "• Teclas Tab y Shift+Tab: Moverse entre elementos.\n",
-            "• Teclas Alt + B: Ir al cuadro de búsqueda.\n",
-            "• Tecla Enter (al escribir en Búsqueda): Ejecutar búsqueda.\n",
-            "• Flechas Arriba/Abajo: Navegar por los resultados de búsqueda.\n",
-            "• Tecla I: Ver información detallada del video (campos navegables por Tab).\n",
-            "• Tecla Enter en Resultado ó Teclas Alt + V: Comenzar a descargar resultado como Video.\n",
-            "• Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
-            "• Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
-            "• Tecla F1: Mostrar esta ayuda."
+            "- Teclas Tab y Shift+Tab: Moverse entre elementos.\n",
+            "- Teclas Alt + B: Ir al cuadro de búsqueda.\n",
+            "- Tecla Enter (al escribir en Búsqueda): Ejecutar búsqueda.\n",
+            "- Flechas Arriba/Abajo: Navegar por los resultados de búsqueda.\n",
+            "- Tecla I: Ver información detallada del video (campos navegables por Tab).\n",
+            "- Tecla Enter en Resultado ó Teclas Alt + V: Comenzar a descargar resultado como Video.\n",
+            "- Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
+            "- Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
+            "- Tecla F1: Mostrar esta ayuda."
         )
 
         help_text = "".join(help_text_tuple)
@@ -187,9 +193,12 @@ class MainWindow:
         help_win.bind("<Escape>", lambda e: help_win.destroy())
 
         ## Leyendo los textos de ayuda.
-        accessibility_manager.announce("Mostrando ventana de ayuda.")
-        for teclas_atajos in help_text_tuple:
-            accessibility_manager.announce(teclas_atajos)
+        def announce_help():
+            accessibility_manager.announce("Mostrando ventana de ayuda.")
+            for teclas_atajos in help_text_tuple:
+                accessibility_manager.announce(teclas_atajos)
+
+        help_win.after(300, announce_help)
 
 
     def perform_search(self):
@@ -352,7 +361,6 @@ class MainWindow:
     def on_search_focus(self):
         self.entry_search.focus_set()
         self.entry_search.select_range(0, "end")
-        accessibility_manager.announce("Moviendo cursor a campo de búsqueda. Escriba lo que desee buscar.")
 
     def download_selected(self, download_type):
         selection = self.listbox_results.curselection()
