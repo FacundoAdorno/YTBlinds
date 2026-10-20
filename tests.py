@@ -1,15 +1,20 @@
 import unittest
+
+from yt_blinds.accessibility import accessibility_manager
 from yt_blinds.downloader import Downloader
 from yt_blinds.updater import Updater
-from yt_blinds.accessibility import accessibility_manager
+
 
 class TestYTBlinds(unittest.TestCase):
+
+    downloader = Downloader()
+
     def test_downloader_empty_query(self):
-        results = Downloader.search_videos("")
+        results, source = self.downloader.search_videos("")
         self.assertEqual(results, [])
 
     def test_fallback_search(self):
-        results = Downloader._fallback_search("test", 5)
+        results, source = self.downloader._fallback_search("test", 5)
         self.assertTrue(len(results) > 0)
 
     def test_accessibility_announce(self):

@@ -44,6 +44,8 @@ class MainWindow:
         self.style.map("TButton", background=[('active', '#444444')])
         self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.color_scheme.accent_color, darkcolor=self.color_scheme.accent_color, lightcolor=self.color_scheme.accent_color, bordercolor="#444444")
 
+        self.downloader = Downloader()
+
         self.create_widgets()
         self.bind_shortcuts()
 
@@ -246,7 +248,8 @@ class MainWindow:
                 }]
                 source_desc = "URL Directa"
             else:
-                self.current_results, source_desc = Downloader.search_videos(query, max_results=40)
+                max_results_displayed = self.config.getint('SEARCH', 'max_results_displayed') if self.config.has_option('SEARCH', 'max_results_displayed') else 40
+                self.current_results, source_desc = self.downloader.search_videos(query, max_results_displayed)
 
             self.root.after(0, lambda: self.update_results_ui(source_desc))
 
@@ -267,7 +270,7 @@ class MainWindow:
         accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
 
         def fetch_info_thread():
-            details = Downloader.get_video_details(url)
+            details = self.downloader.get_video_details(url)
             self.root.after(0, lambda: self._display_video_info(details, item['title']))
 
         threading.Thread(target=fetch_info_thread, daemon=True).start()
@@ -490,7 +493,7 @@ class MainWindow:
                 messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
             ])
 
-        Downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion, title=title, video_id=video_id)
+        self.downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion, title=title, video_id=video_id)
 
     def update_ytdlp(self):
         accessibility_manager.stop_announces()

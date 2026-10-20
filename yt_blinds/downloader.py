@@ -4,34 +4,28 @@ import sys
 import urllib.request
 import zipfile
 
-
 class Downloader:
     """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
 
-    @staticmethod
-    def search_videos(query, max_results=40):
+    def search_videos(self, query, max_results=40):
         if not query.strip():
-            return []
+            return [], ""
 
-        # Si la consulta es una URL directa de YouTube
         if query.startswith("http://") or query.startswith("https://"):
             return [{
                 'id': 'url',
                 'title': f"URL Directa: {query}",
                 'url': query
-            }]
+            }], "URL Directa"
 
-        # Intentar importar yt-dlp
         try:
             import yt_dlp
         except ImportError:
-            return Downloader._fallback_search(query, max_results)
+            return self._fallback_search(query, max_results)
 
-        # Búsqueda mediante la API pública de sugerencias de YouTube (No requiere proxy de red restringido)
         results = []
         source_used = "Desconocido"
 
-        # 1. Intentar búsqueda directa con yt-dlp
         try:
             import yt_dlp
             ydl_opts = {
@@ -59,7 +53,6 @@ class Downloader:
         except Exception:
             pass
 
-        # 2. Si yt-dlp no retornó resultados (por restricciones de red/proxy del entorno), usar API de sugerencias JSON
         if not results:
             try:
                 import json
@@ -88,7 +81,6 @@ class Downloader:
             except Exception:
                 pass
 
-        # 3. Fallback final simulado
         if not results:
             results = [{
                 'id': f'res_{i}',
@@ -99,17 +91,14 @@ class Downloader:
 
         return results, source_used
 
-    @staticmethod
-    def _fallback_search(query, max_results):
-        # Búsqueda de respaldo si yt-dlp no está instalado localmente
+    def _fallback_search(self, query, max_results):
         return [{
             'id': 'mock1',
             'title': f"[Modo Sin Dependencia] Resultado simulado para: {query}",
             'url': f"https://www.youtube.com/results?search_query={query}"
-        }]
+        }], "Modo de Respaldo Local"
 
-    @staticmethod
-    def download_media(url, download_type='video', output_path=None, progress_callback=None, completion_callback=None, title=None, video_id=None):
+    def download_media(self, url, download_type='video', output_path=None, progress_callback=None, completion_callback=None, title=None, video_id=None):
         import threading
 
         from .accessibility import accessibility_manager
@@ -207,8 +196,7 @@ class Downloader:
         thread.daemon = True
         thread.start()
 
-    @staticmethod
-    def get_video_details(url):
+    def get_video_details(self, url):
         try:
             import yt_dlp
             ydl_opts = {'quiet': True, 'no_warnings': True, 'noproxy': True, 'extract_flat': False}
