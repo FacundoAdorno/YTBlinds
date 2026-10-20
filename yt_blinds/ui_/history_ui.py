@@ -1,7 +1,6 @@
 import tkinter as tk
 
 from yt_blinds.accessibility import accessibility_manager
-from yt_blinds.history import history_manager
 
 
 class HistoryWindow:
@@ -10,7 +9,7 @@ class HistoryWindow:
         pass
 
     @staticmethod
-    def show_history_window(root, color_scheme):
+    def show_history_window(root, color_scheme, history_manager):
         accessibility_manager.stop_announces()
         accessibility_manager.announce("Abriendo historial de archivos descargados.")
 

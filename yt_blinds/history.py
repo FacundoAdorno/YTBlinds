@@ -14,12 +14,16 @@ def sanitize_filename(name):
     return clean if clean else "download"
 
 class DownloadHistoryManager:
-    def __init__(self, db_path=None):
-        if not db_path:
-            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    def __init__(self, db_relative_path=None, db_filename=None):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if not db_relative_path or not db_filename:
             db_dir = os.path.join(base_dir, "data")
             os.makedirs(db_dir, exist_ok=True)
             db_path = os.path.join(db_dir, "default.db")
+        else:
+            db_path = f"{base_dir}/{db_relative_path}/{db_filename}"
+
+        print("- Cargando archivo de base de datos. Ruta: " + db_path)
 
         self.db_path = db_path
         self._init_db()
@@ -97,5 +101,3 @@ class DownloadHistoryManager:
             query += " ORDER BY id DESC"
             cursor.execute(query, params)
             return cursor.fetchall()
-
-history_manager = DownloadHistoryManager()

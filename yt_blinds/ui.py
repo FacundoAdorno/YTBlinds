@@ -1,5 +1,6 @@
 import configparser
 import locale
+from logging import info
 import os
 import threading
 import tkinter as tk
@@ -11,6 +12,7 @@ from yt_blinds.ui_.history_ui import HistoryWindow
 
 from .accessibility import accessibility_manager
 from .downloader import Downloader
+from .history import DownloadHistoryManager
 from .updater import Updater
 
 
@@ -44,7 +46,17 @@ class MainWindow:
         self.style.map("TButton", background=[('active', '#444444')])
         self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.color_scheme.accent_color, darkcolor=self.color_scheme.accent_color, lightcolor=self.color_scheme.accent_color, bordercolor="#444444")
 
-        self.downloader = Downloader()
+        self.history_manager = DownloadHistoryManager(
+            db_relative_path = self.config['DATA']['db_relativepath_dir'],
+            db_filename = self.config['DATA']['db_path_filename'],
+        )
+        try:
+            self.downloader = Downloader(self.history_manager)
+        except TypeError as err:
+            print("[ERROR] No se ha configurado un HistoryManager en el Downloader. Verifica tu configuración en el archivo ytblind.ini.")
+            print(err)
+            messagebox.showerror("ERROR", "No se puedo inicializar el Downloader de Youtube. Por favor, verifica tu archivo de configuración .ini de la aplicación.")
+            self.root.destroy()
 
         self.create_widgets()
         self.bind_shortcuts()
@@ -53,10 +65,11 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
         self.root.bind("<Escape>", lambda e: self.confirm_exit())
 
-        self.root.after(300, lambda: accessibility_manager.announce("Presione F1 para ayuda de atajos, o navegue con Tabulador. Presione Escape para salir."))
+        self.root.after(300, lambda: accessibility_manager.announce("Presione F1 para ayuda. Presione Escape para salir."))
         self.root.after(310, lambda: self.entry_search.focus_set())
 
     def confirm_exit(self):
+        accessibility_manager.stop_announces()
         self.root.after(300, lambda: accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
 
         exit_win = tk.Toplevel(self.root)
@@ -98,7 +111,7 @@ class MainWindow:
 
         self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.color_scheme.fg_color, insertbackground=self.color_scheme.fg_color)
         self.entry_search.pack(fill=tk.X, pady=5)
-        self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Posicionando cursor en campo de búsqueda. Escriba un término o URL de YouTube y presione Enter."))
+        self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Cursor posicionado en campo de búsqueda. Escriba su búsqueda y luego presione Enter."))
         self.entry_search.bind("<Key>", self.on_search_key)
         self.entry_search.bind("<Control-a>", lambda e: (self.entry_search.select_range(0, tk.END), "break")[1])
 
@@ -146,7 +159,7 @@ class MainWindow:
         self.btn_audio.pack(side=tk.LEFT, padx=5)
         self.btn_audio.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
 
-        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_history.pack(side=tk.LEFT, padx=5)
         self.btn_history.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Historial de Descargas (Alt+H)"))
 
@@ -174,8 +187,8 @@ class MainWindow:
         self.root.bind("<Alt-b>", lambda e: self.on_search_focus())
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
-        self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
-        self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
+        self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager))
+        self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
@@ -366,7 +379,12 @@ class MainWindow:
         btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_close.pack(pady=15, padx=5, anchor=tk.W)
 
-        info_win.bind("<Escape>", lambda e: info_win.destroy())
+        def close_details_win(e):
+            info_win.destroy()
+            accessibility_manager.stop_announces()
+
+        info_win.bind("<Escape>", close_details_win)
+        info_win.bind("WM_DELETE_WINDOW", close_details_win)
         # Dar foco al primer campo navegable
         scrollable_frame.winfo_children()[0].winfo_children()[1].focus_set()
 
@@ -403,6 +421,7 @@ class MainWindow:
         self.entry_search.select_range(0, "end")
 
     def on_search_key(self, event):
+        accessibility_manager.stop_announces()
         if event.keysym == "space":
             current_text = self.entry_search.get()
             accessibility_manager.announce(current_text)

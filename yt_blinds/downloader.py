@@ -7,6 +7,11 @@ import zipfile
 class Downloader:
     """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
 
+    def __init__(self, hist_manager):
+        if hist_manager is None:
+            raise TypeError("Debe especificar indicar una instancia de HistoryManager.")
+        self.history_manager = hist_manager
+
     def search_videos(self, query, max_results=40):
         if not query.strip():
             return [], ""
@@ -102,7 +107,7 @@ class Downloader:
         import threading
 
         from .accessibility import accessibility_manager
-        from .history import history_manager, sanitize_filename
+        from .history import sanitize_filename
 
         def run():
             if not output_path:
@@ -113,7 +118,7 @@ class Downloader:
                 download_dir = output_path
 
             vid = video_id or url
-            history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
+            self.history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
 
             try:
                 import yt_dlp
@@ -181,7 +186,7 @@ class Downloader:
                     saved_path = download_dir
                     downloaded_title = sanitize_filename(raw_title)
 
-                history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
+                self.history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
 
                 accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:
