@@ -83,12 +83,13 @@ class AccessibilityManager:
         #     except Exception:
         #         pass
 
-        while not self.speech_queue.empty():
-            try:
-                self.speech_queue.get_nowait()
-                self.speech_queue.task_done()
-            except queue.Empty:
-                break
+        if platform.system() == "Linux":
+            while not self.speech_queue.empty():
+                try:
+                    self.speech_queue.get_nowait()
+                    self.speech_queue.task_done()
+                except queue.Empty:
+                    break
 
     def _process_queue(self):
         while True:
