@@ -1,18 +1,14 @@
-import configparser
 import locale
-from logging import info
-import os
 import threading
 import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import NamedTuple
 
+from yt_blinds.context.app_context import app_context
 from yt_blinds.ui_.history_ui import HistoryWindow
 
 from .accessibility import accessibility_manager
-from .downloader import Downloader
-from .history import DownloadHistoryManager
 from .updater import Updater
 
 
@@ -20,21 +16,17 @@ class MainWindow:
     """Ventana principal accesible para personas no videntes."""
 
     def __init__(self, root):
-        self.config = configparser.ConfigParser();
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.config.read(base_dir + "/config/ytblinds.ini")
-
-        locale.setlocale(locale.LC_TIME, self.config['GENERAL']['locale'])
+        locale.setlocale(locale.LC_TIME, app_context.config['GENERAL']['locale'])
 
         self.root = root
         self.root.title("Descargador Accesible de YouTube - YTBlinds")
-        self.root.geometry("{w}x{h}".format(w=self.config['GENERAL']['win_height'],h=self.config['GENERAL']['win_width']))
+        self.root.geometry("{w}x{h}".format(w=app_context.config['GENERAL']['win_height'],h=app_context.config['GENERAL']['win_width']))
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
-        self.color_scheme = ColorScheme(bg_color=self.config['STYLES']['bg_color'],
-            fg_color=self.config['STYLES']['fg_color'],
-            accent_color=self.config['STYLES']['accent_color'],
-            select_color=self.config['STYLES']['select_color'])
+        self.color_scheme = ColorScheme(bg_color=app_context.config['STYLES']['bg_color'],
+            fg_color=app_context.config['STYLES']['fg_color'],
+            accent_color=app_context.config['STYLES']['accent_color'],
+            select_color=app_context.config['STYLES']['select_color'])
         self.root.configure(bg=self.color_scheme.bg_color)
 
         # Estilo ttk para alto contraste
@@ -45,18 +37,6 @@ class MainWindow:
         self.style.configure("TButton", background="#222222", foreground=self.color_scheme.accent_color, font=("Arial", 12, "bold"), borderwidth=2)
         self.style.map("TButton", background=[('active', '#444444')])
         self.style.configure("Horizontal.TProgressbar", troughcolor="#222222", background=self.color_scheme.accent_color, darkcolor=self.color_scheme.accent_color, lightcolor=self.color_scheme.accent_color, bordercolor="#444444")
-
-        self.history_manager = DownloadHistoryManager(
-            db_relative_path = self.config['DATA']['db_relativepath_dir'],
-            db_filename = self.config['DATA']['db_path_filename'],
-        )
-        try:
-            self.downloader = Downloader(self.history_manager)
-        except TypeError as err:
-            print("[ERROR] No se ha configurado un HistoryManager en el Downloader. Verifica tu configuración en el archivo ytblind.ini.")
-            print(err)
-            messagebox.showerror("ERROR", "No se puedo inicializar el Downloader de Youtube. Por favor, verifica tu archivo de configuración .ini de la aplicación.")
-            self.root.destroy()
 
         self.create_widgets()
         self.bind_shortcuts()
@@ -159,7 +139,7 @@ class MainWindow:
         self.btn_audio.pack(side=tk.LEFT, padx=5)
         self.btn_audio.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
 
-        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_history.pack(side=tk.LEFT, padx=5)
         self.btn_history.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Historial de Descargas (Alt+H)"))
 
@@ -187,8 +167,8 @@ class MainWindow:
         self.root.bind("<Alt-b>", lambda e: self.on_search_focus())
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
-        self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager))
-        self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.history_manager))
+        self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
+        self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
@@ -261,8 +241,8 @@ class MainWindow:
                 }]
                 source_desc = "URL Directa"
             else:
-                max_results_displayed = self.config.getint('SEARCH', 'max_results_displayed') if self.config.has_option('SEARCH', 'max_results_displayed') else 40
-                self.current_results, source_desc = self.downloader.search_videos(query, max_results_displayed)
+                max_results_displayed = app_context.config.getint('SEARCH', 'max_results_displayed') if app_context.config.has_option('SEARCH', 'max_results_displayed') else 40
+                self.current_results, source_desc = app_context.downloader.search_videos(query, max_results_displayed)
 
             self.root.after(0, lambda: self.update_results_ui(source_desc))
 
@@ -283,7 +263,7 @@ class MainWindow:
         accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
 
         def fetch_info_thread():
-            details = self.downloader.get_video_details(url)
+            details = app_context.downloader.get_video_details(url)
             self.root.after(0, lambda: self._display_video_info(details, item['title']))
 
         threading.Thread(target=fetch_info_thread, daemon=True).start()
@@ -338,10 +318,7 @@ class MainWindow:
         scrollbar = tk.Scrollbar(info_win, orient=tk.VERTICAL, command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=self.color_scheme.bg_color)
 
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
@@ -512,7 +489,7 @@ class MainWindow:
                 messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
             ])
 
-        self.downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion, title=title, video_id=video_id)
+        app_context.downloader.download_media(url, download_type=download_type, progress_callback=progress, completion_callback=completion, title=title, video_id=video_id)
 
     def update_ytdlp(self):
         accessibility_manager.stop_announces()
