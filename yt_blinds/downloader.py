@@ -7,10 +7,10 @@ import zipfile
 class Downloader:
     """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
 
-    def __init__(self, hist_manager):
-        if hist_manager is None:
-            raise TypeError("Debe especificar indicar una instancia de HistoryManager.")
-        self.history_manager = hist_manager
+    def __init__(self, context):
+        if context is None:
+            raise TypeError("Debe especificar indicar una instancia de AppContext.")
+        self.app_context = context
 
     def search_videos(self, query, max_results=40):
         if not query.strip():
@@ -103,22 +103,26 @@ class Downloader:
             'url': f"https://www.youtube.com/results?search_query={query}"
         }], "Modo de Respaldo Local"
 
-    def download_media(self, url, download_type='video', output_path=None, progress_callback=None, completion_callback=None, title=None, video_id=None):
+    def download_media(self, url, download_type='video', progress_callback=None, completion_callback=None, title=None, video_id=None):
         import threading
 
         from .accessibility import accessibility_manager
         from .history import sanitize_filename
 
         def run():
+            output_path = self.app_context.config['DATA']['download_path_video'] if download_type == 'video' else self.app_context.config['DATA']['download_path_audio']
+            output_path = output_path.strip()
             if not output_path:
-                download_dir = os.path.expanduser("~/Downloads")
+                download_dir = os.path.expanduser("~/Descargas")
                 if not os.path.exists(download_dir):
                     download_dir = os.getcwd()
             else:
-                download_dir = output_path
+                # Si el valor en configuración tiene ~ en su config (referenciando al HOME del usario), lo expando.
+                # Sino, es una ruta absoluta.
+                download_dir = output_path if output_path.find('~', 0, 1) == -1 else os.path.expanduser(output_path)
 
             vid = video_id or url
-            self.history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
+            self.app_context.history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
 
             try:
                 import yt_dlp
@@ -186,7 +190,7 @@ class Downloader:
                     saved_path = download_dir
                     downloaded_title = sanitize_filename(raw_title)
 
-                self.history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
+                self.app_context.history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
 
                 accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:

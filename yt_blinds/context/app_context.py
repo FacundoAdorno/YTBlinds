@@ -11,7 +11,7 @@ class AppContext:
             db_relative_path = self.config['DATA']['db_relativepath_dir'],
             db_filename = self.config['DATA']['db_path_filename'],
         )
-        self.downloader = Downloader(self.history_manager)
+        self.downloader = Downloader(self)
 
     def _load_config(self):
         config_parser = configparser.ConfigParser()
@@ -20,5 +20,3 @@ class AppContext:
         if os.path.exists(config_path):
             config_parser.read(config_path)
         return config_parser
-
-app_context = AppContext()

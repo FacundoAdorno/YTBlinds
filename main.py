@@ -10,11 +10,13 @@ except ImportError:
     sys.exit(1)
 
 from yt_blinds.ui import MainWindow
+from yt_blinds.context.app_context import AppContext
 
 
 def main():
     root = tk.Tk()
-    app = MainWindow(root)
+    app_context = AppContext()
+    app = MainWindow(root, app_context)
     root.mainloop()
 
 if __name__ == "__main__":

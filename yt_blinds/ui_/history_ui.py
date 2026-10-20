@@ -1,7 +1,6 @@
 import tkinter as tk
 
 from yt_blinds.accessibility import accessibility_manager
-from yt_blinds.context.app_context import app_context
 
 
 class HistoryWindow:
@@ -10,7 +9,7 @@ class HistoryWindow:
         pass
 
     @staticmethod
-    def show_history_window(root, color_scheme):
+    def show_history_window(root, color_scheme, context):
         accessibility_manager.stop_announces()
         accessibility_manager.announce("Abriendo historial de archivos descargados.")
 
@@ -44,7 +43,7 @@ class HistoryWindow:
             listbox_history.delete(0, tk.END)
             q = entry_filter.get().strip()
             t = current_type.get()
-            items = app_context.history_manager.get_history(download_type=t, filter_query=q)
+            items = context.history_manager.get_history(download_type=t, filter_query=q)
             for item in items:
                 display_str = f"[{item[2]}] {item[0]} - Ruta: {item[1]}"
                 listbox_history.insert(tk.END, display_str)
