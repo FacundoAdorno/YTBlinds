@@ -113,7 +113,7 @@ class Downloader:
         import threading
 
         from .accessibility import accessibility_manager
-        from .history import history_manager
+        from .history import history_manager, sanitize_filename
 
         def run():
             if not output_path:
@@ -153,6 +153,7 @@ class Downloader:
                     'format': 'bestvideo+bestaudio/best',
                 })
 
+            downloaded_file_path = [None]
             if progress_callback:
                 def hook(d):
                     if d['status'] == 'downloading':
@@ -160,16 +161,38 @@ class Downloader:
                         progress_callback(f"Descargando: {p}")
                     elif d['status'] == 'finished':
                         progress_callback("Descarga finalizada. Procesando archivo...")
+                        downloaded_file_path[0] = d.get('filename')
                 ydl_opts['progress_hooks'] = [hook]
 
             try:
                 accessibility_manager.announce("Iniciando descarga...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
-                    downloaded_title = title or (info.get('title') if info else url)
+                    if not downloaded_file_path[0] and info:
+                        downloaded_file_path[0] = ydl.prepare_filename(info)
+                    raw_title = title or (info.get('title') if info else url)
                     actual_vid = (info.get('id') if info else None) or vid
 
-                history_manager.add_download(actual_vid, downloaded_title, download_dir, download_type)
+                final_path = downloaded_file_path[0]
+                if final_path and os.path.exists(final_path):
+                    dir_name, file_name = os.path.split(final_path)
+                    name_part, ext_part = os.path.splitext(file_name)
+                    sanitized_name = sanitize_filename(name_part)
+                    new_filename = sanitized_name + ext_part
+                    new_filepath = os.path.join(dir_name, new_filename)
+
+                    if final_path != new_filepath:
+                        if os.path.exists(new_filepath):
+                            os.remove(new_filepath)
+                        os.rename(final_path, new_filepath)
+
+                    saved_path = new_filepath
+                    downloaded_title = sanitized_name
+                else:
+                    saved_path = download_dir
+                    downloaded_title = sanitize_filename(raw_title)
+
+                history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
 
                 accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:

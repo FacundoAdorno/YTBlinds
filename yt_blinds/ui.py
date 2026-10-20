@@ -1,4 +1,6 @@
+import configparser
 import locale
+import os
 import threading
 import tkinter as tk
 from datetime import datetime
@@ -16,14 +18,21 @@ class MainWindow:
     """Ventana principal accesible para personas no videntes."""
 
     def __init__(self, root):
-        locale.setlocale(locale.LC_TIME, "es_ES")
+        self.config = configparser.ConfigParser();
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config.read(base_dir + "/config/ytblinds.ini")
+
+        locale.setlocale(locale.LC_TIME, self.config['GENERAL']['locale'])
 
         self.root = root
         self.root.title("Descargador Accesible de YouTube - YTBlinds")
-        self.root.geometry("800x650")
+        self.root.geometry("{w}x{h}".format(w=self.config['GENERAL']['win_height'],h=self.config['GENERAL']['win_width']))
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
-        self.color_scheme = ColorScheme(bg_color="#000000",fg_color="#FFFFFF", accent_color="#FFFF00",select_color="#333333")
+        self.color_scheme = ColorScheme(bg_color=self.config['STYLES']['bg_color'],
+            fg_color=self.config['STYLES']['fg_color'],
+            accent_color=self.config['STYLES']['accent_color'],
+            select_color=self.config['STYLES']['select_color'])
         self.root.configure(bg=self.color_scheme.bg_color)
 
         # Estilo ttk para alto contraste
