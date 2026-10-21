@@ -3,7 +3,6 @@ import subprocess
 
 
 def play_audio_file(file_path):
-    print(f"Reproduciento audio {file_path}...")
     current_os = platform.system()
 
     if current_os == "Windows":

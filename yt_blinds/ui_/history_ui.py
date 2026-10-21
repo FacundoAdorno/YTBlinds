@@ -58,8 +58,10 @@ class HistoryWindow:
             t = current_type.get()
             items = context.history_manager.get_history(download_type=t, filter_query=q)
             for item in items:
-                display_str = f"[{t}] {item[0]} - Ruta: {item[1]} - Fecha: {item[2]}"
+                display_str = f"[{t.upper()}]. {item[0]}. Ruta: {item[1]}. Fecha de descarga: {item[2]}"
                 listbox_history.insert(tk.END, display_str)
+            if (len(items) > 0):
+                listbox_history.focus_set()
             context.accessibility_manager.announce(f"Se encontraron {len(items)} elementos en {t}s.")
 
         btn_video_tab = tk.Button(type_frame, text="Videos", command=lambda: [current_type.set("video"), load_history_items()], bg="#222222", fg=color_scheme.accent_color, font=("Arial", 11, "bold"))

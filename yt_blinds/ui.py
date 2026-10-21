@@ -50,7 +50,7 @@ class MainWindow:
 
     def confirm_exit(self):
         self.app_context.accessibility_manager.stop_announces()
-        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
         self.root.after(300, lambda: self.app_context.accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
 
         exit_win = tk.Toplevel(self.root)
@@ -80,7 +80,7 @@ class MainWindow:
         btn_confirm.pack(side=tk.LEFT, padx=10)
 
         def _exit_app(event):
-            play_audio_file(self.app_context.project_path + "/assets/sounds/exit_window.wav")
+            play_audio_file(self.app_context.project_path + "/assets/sounds/low/exit_window_low.wav")
             self.root.destroy()
 
         exit_win.bind("<Escape>", lambda e: _exit_app(e))
@@ -201,7 +201,7 @@ class MainWindow:
         self.listbox_results.bind("<I>", lambda e: self.show_video_info())
 
     def show_help(self):
-        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
         help_text_tuple = (
             "- Teclas Tab y Shift+Tab: Moverse entre elementos.\n",
             "- Teclas Alt + B: Ir al cuadro de búsqueda.\n",
@@ -242,7 +242,7 @@ class MainWindow:
 
         def cerrar_ventana_ayuda(e):
             self.app_context.accessibility_manager.stop_announces()
-            play_audio_file(self.app_context.project_path + "/assets/sounds/close_window.wav")
+            play_audio_file(self.app_context.project_path + "/assets/sounds/low/close_window_low.wav")
             help_win.destroy()
 
         help_win.bind("<Escape>", cerrar_ventana_ayuda)
@@ -305,7 +305,7 @@ class MainWindow:
         threading.Thread(target=fetch_info_thread, daemon=True).start()
 
     def _display_video_info(self, details, fallback_title):
-        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
         self.app_context.accessibility_manager.stop_announces()
 
         if not details:
@@ -365,7 +365,7 @@ class MainWindow:
 
         def close_details_win(e):
             self.app_context.accessibility_manager.stop_announces()
-            play_audio_file(self.app_context.project_path + "/assets/sounds/close_window.wav")
+            play_audio_file(self.app_context.project_path + "/assets/sounds/low/close_window_low.wav")
             info_win.destroy()
 
         # Crear campos individuales navegables mediante Tab
@@ -381,7 +381,7 @@ class MainWindow:
 
             def tab_metadata(event, lt, vt):
                 valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
-                play_audio_file(self.app_context.project_path + "/assets/sounds/tab.wav")
+                play_audio_file(self.app_context.project_path + "/assets/sounds/low/tab_low_low.wav")
                 self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt))
 
             if label_text == "Descripción":
