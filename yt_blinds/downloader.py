@@ -106,7 +106,6 @@ class Downloader:
     def download_media(self, url, download_type='video', progress_callback=None, completion_callback=None, title=None, video_id=None):
         import threading
 
-        from .accessibility import accessibility_manager
         from .history import sanitize_filename
 
         def run():
@@ -163,7 +162,7 @@ class Downloader:
                 ydl_opts['progress_hooks'] = [hook]
 
             try:
-                accessibility_manager.announce("Iniciando descarga...")
+                self.app_context.accessibility_manager.announce("Iniciando descarga...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if not downloaded_file_path[0] and info:
@@ -192,12 +191,12 @@ class Downloader:
 
                 self.app_context.history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
 
-                accessibility_manager.announce("Descarga completada con éxito.")
+                self.app_context.accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:
                     completion_callback(True, "Descarga completada con éxito.")
             except Exception as e:
                 err_msg = f"Error en la descarga: {str(e)}"
-                accessibility_manager.announce(err_msg)
+                self.app_context.accessibility_manager.announce(err_msg)
                 if completion_callback:
                     completion_callback(False, err_msg)
 

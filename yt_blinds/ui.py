@@ -192,8 +192,8 @@ class MainWindow:
         self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context))
         self.root.bind("<Control-Alt-v>", lambda e: self.app_context.open_folder("video"))
         self.root.bind("<Control-Alt-V>", lambda e: self.app_context.open_folder("video"))
-        self.root.bind("<Control-Alt-a>", lambda e: self.app_context.open_folder("audio"))
-        self.root.bind("<Control-Alt-A>", lambda e: self.app_context.open_folder("audio"))
+        self.root.bind("<Control-Alt-f>", lambda e: self.app_context.open_folder("audio"))
+        self.root.bind("<Control-Alt-F>", lambda e: self.app_context.open_folder("audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
@@ -212,7 +212,7 @@ class MainWindow:
             "- Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
             "- Teclas Alt + H: Ver historial de archivos descargados (Videos y Audios).\n",
             "- Teclas Control + Alt + V: Abrir carpeta de videos descargados.\n",
-            "- Teclas Control + Alt + A: Abrir carpeta de audios descargados.\n",
+            "- Teclas Control + Alt + F: Abrir carpeta de audios descargados.\n",
             "- Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
             "- Tecla F1: Mostrar esta ayuda.\n",
             "- \n",
@@ -381,7 +381,7 @@ class MainWindow:
 
             def tab_metadata(event, lt, vt):
                 valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
-                play_audio_file(self.app_context.project_path + "/assets/sounds/low/tab_low_low.wav")
+                play_audio_file(self.app_context.project_path + "/assets/sounds/low/tab_low.wav")
                 self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt))
 
             if label_text == "Descripción":
@@ -389,6 +389,8 @@ class MainWindow:
                 txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1, takefocus=True)
                 txt_val.insert("1.0", str(value_text))
                 txt_val.bind("<Key>", bloquear_edicion)
+                txt_val.bind("<Tab>", lambda e: (txt_val.tk_focusNext().focus_set(), "break")[1])
+                txt_val.bind("<Shift-Tab>", lambda e: (txt_val.tk_focusPrev().focus_set(), "break")[1])
                 txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
                 max_chars_toread = self.app_context.config['ACCESSIBILITY'].getint('detailed_video.description.max_chars_read', 500)
                 if max_chars_toread > 0:
@@ -539,6 +541,7 @@ class MainWindow:
                 self.btn_update.config(state=tk.NORMAL),
                 messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
             ])
+            play_audio_file(self.app_context.project_path + "/assets/sounds/ok.wav")
 
         self.app_context.downloader.download_media(url, download_type=download_type, progress_callback=progress,
             completion_callback=completion, title=title, video_id=video_id)

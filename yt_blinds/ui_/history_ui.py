@@ -1,4 +1,16 @@
+import os
 import tkinter as tk
+from pathlib import Path
+
+
+def resolver_ruta(ruta_texto):
+    """
+    Expande variables de entorno (%USERPROFILE%, $HOME) y la tilde (~)
+    de forma compatible con Windows y Linux usando pathlib.
+    """
+    # 1. os.path.expandvars resuelve %VAR% (Windows) o $VAR (Linux)
+    # 2. .expanduser() resuelve la tilde (~) al directorio home en cualquier sistema
+    return Path(os.path.expandvars(ruta_texto)).expanduser()
 
 class HistoryWindow:
 
@@ -58,7 +70,7 @@ class HistoryWindow:
             t = current_type.get()
             items = context.history_manager.get_history(download_type=t, filter_query=q)
             for item in items:
-                display_str = f"[{t.upper()}]. {item[0]}. Ruta: {item[1]}. Fecha de descarga: {item[2]}"
+                display_str = f"[{t.upper()}]. {item[0]}. Ruta: {resolver_ruta(item[1])}. Fecha de descarga: {item[2]}"
                 listbox_history.insert(tk.END, display_str)
             if (len(items) > 0):
                 listbox_history.focus_set()
