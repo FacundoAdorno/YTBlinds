@@ -110,7 +110,7 @@ class Downloader:
         from .history import sanitize_filename
 
         def run():
-            output_path = self.app_context.config['DATA']['download_path_video'] if download_type == 'video' else self.app_context.config['DATA']['download_path_audio']
+            output_path = self.app_context.get_download_path(download_type)
             output_path = output_path.strip()
             if not output_path:
                 download_dir = os.path.expanduser("~/Descargas")

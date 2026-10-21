@@ -1,13 +1,12 @@
 import unittest
 
-from yt_blinds.accessibility import accessibility_manager
+from yt_blinds.context.app_context import app_context
 from yt_blinds.downloader import Downloader
-from yt_blinds.updater import Updater
 
 
 class TestYTBlinds(unittest.TestCase):
 
-    downloader = Downloader()
+    downloader = Downloader(app_context)
 
     def test_downloader_empty_query(self):
         results, source = self.downloader.search_videos("")
@@ -19,13 +18,13 @@ class TestYTBlinds(unittest.TestCase):
 
     def test_accessibility_announce(self):
         # Should execute without errors on Linux / test environment
-        accessibility_manager.announce("Prueba de accesibilidad")
+        app_context.accessibility_manager.announce("Prueba de accesibilidad")
 
     def test_accessibility_stop_announces(self):
-        accessibility_manager.announce("Anuncio 1")
-        accessibility_manager.announce("Anuncio 2")
-        accessibility_manager.stop_announces()
-        self.assertTrue(accessibility_manager.speech_queue.empty())
+        app_context.accessibility_manager.announce("Anuncio 1")
+        app_context.accessibility_manager.announce("Anuncio 2")
+        app_context.accessibility_manager.stop_announces()
+        self.assertTrue(app_context.accessibility_manager.speech_queue.empty())
 
 if __name__ == '__main__':
     unittest.main()

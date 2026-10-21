@@ -8,7 +8,8 @@ import pyttsx3
 
 
 class AccessibilityManager:
-    def __init__(self):
+    def __init__(self, context):
+        self.app_context = context
         self._nvda_dll = None
         self.engine = None
         self.speech_queue = queue.Queue()
@@ -42,8 +43,8 @@ class AccessibilityManager:
                     self.engine.setProperty("voice", voice.id)
                     print("Voz seleccionada:", voice.id)
                     break
-            self.engine.setProperty('rate', 140)
-            self.engine.setProperty('volume', 1)    ## Volumen al 100%.
+            self.engine.setProperty('rate', self.app_context.config['ACCESSIBILITY'].getint('pyttsx3.voice.rate', 170))
+            self.engine.setProperty('volume', self.app_context.config['ACCESSIBILITY'].getfloat('pyttsx3.voice.volume', 1.0))    ## Volumen al 100%.
         except Exception as e:
             print("Error al inicializar pyttsx3:", repr(e))
 
@@ -103,5 +104,3 @@ class AccessibilityManager:
                 except Exception as e:
                     print("Error al hablar texto:", repr(e))
             self.speech_queue.task_done()
-
-accessibility_manager = AccessibilityManager()

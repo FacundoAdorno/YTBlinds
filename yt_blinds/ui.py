@@ -7,7 +7,6 @@ from typing import NamedTuple
 
 from yt_blinds.ui_.history_ui import HistoryWindow
 
-from .accessibility import accessibility_manager
 from .updater import Updater
 
 
@@ -45,12 +44,12 @@ class MainWindow:
         self.root.protocol("WM_DELETE_WINDOW", self.confirm_exit)
         self.root.bind("<Escape>", lambda e: self.confirm_exit())
 
-        self.root.after(300, lambda: accessibility_manager.announce("Presione F1 para ayuda. Presione Escape para salir."))
+        self.root.after(300, lambda: self.app_context.accessibility_manager.announce("Presione F1 para ayuda. Presione Escape para salir."))
         self.root.after(310, lambda: self.entry_search.focus_set())
 
     def confirm_exit(self):
-        accessibility_manager.stop_announces()
-        self.root.after(300, lambda: accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
+        self.app_context.accessibility_manager.stop_announces()
+        self.root.after(300, lambda: self.app_context.accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
 
         exit_win = tk.Toplevel(self.root)
         exit_win.title("Confirmar Salida - YTBlinds")
@@ -91,13 +90,13 @@ class MainWindow:
 
         self.entry_search = tk.Entry(search_frame, font=("Arial", 14), bg="#222222", fg=self.color_scheme.fg_color, insertbackground=self.color_scheme.fg_color)
         self.entry_search.pack(fill=tk.X, pady=5)
-        self.entry_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Cursor posicionado en campo de búsqueda. Escriba su búsqueda y luego presione Enter."))
+        self.entry_search.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Cursor posicionado en campo de búsqueda. Escriba su búsqueda y luego presione Enter."))
         self.entry_search.bind("<Key>", self.on_search_key)
         self.entry_search.bind("<Control-a>", lambda e: (self.entry_search.select_range(0, tk.END), "break")[1])
 
         self.btn_search = tk.Button(search_frame, text="Buscar (Enter)", command=self.perform_search, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_search.pack(anchor=tk.W, pady=2)
-        self.btn_search.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Buscar (Enter)"))
+        self.btn_search.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Buscar (Enter)"))
 
         # Marco central: Resultados de Búsqueda
         results_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=5)
@@ -131,21 +130,37 @@ class MainWindow:
         action_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=10)
         action_frame.pack(fill=tk.X)
 
-        self.btn_video = tk.Button(action_frame, text="Descargar Video (Alt+V)", command=lambda: self.download_selected("video"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        # Primera fila de botones
+        row1 = tk.Frame(action_frame, bg=self.color_scheme.bg_color)
+        row1.pack(fill=tk.X, pady=3)
+
+        self.btn_video = tk.Button(row1, text="Descargar Video (Alt+V)", command=lambda: self.download_selected("video"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_video.pack(side=tk.LEFT, padx=5)
-        self.btn_video.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Video (Alt+V)"))
+        self.btn_video.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Descargar Video (Alt+V)"))
 
-        self.btn_audio = tk.Button(action_frame, text="Descargar Audio MP3 (Alt+A)", command=lambda: self.download_selected("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_audio = tk.Button(row1, text="Descargar Audio MP3 (Alt+A)", command=lambda: self.download_selected("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_audio.pack(side=tk.LEFT, padx=5)
-        self.btn_audio.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
+        self.btn_audio.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Descargar Audio MP3 (Alt+A)"))
 
-        self.btn_history = tk.Button(action_frame, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_history = tk.Button(row1, text="Historial (Alt+H)", command=lambda: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_history.pack(side=tk.LEFT, padx=5)
-        self.btn_history.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Historial de Descargas (Alt+H)"))
+        self.btn_history.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Historial de Descargas (Alt+H)"))
 
-        self.btn_update = tk.Button(action_frame, text="Actualizar yt-dlp (Alt+U)", command=self.update_ytdlp, bg="#222222", fg="#00FF00", font=("Arial", 11, "bold"))
+        # Segunda fila de botones
+        row2 = tk.Frame(action_frame, bg=self.color_scheme.bg_color)
+        row2.pack(fill=tk.X, pady=3)
+
+        self.btn_folder_video = tk.Button(row2, text="Carpeta Videos (Ctrl+Alt+V)", command=lambda: self.app_context.open_folder("video"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_folder_video.pack(side=tk.LEFT, padx=5)
+        self.btn_folder_video.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Abrir Carpeta Videos (Control+Alt+V)"))
+
+        self.btn_folder_audio = tk.Button(row2, text="Carpeta Audios (Ctrl+Alt+A)", command=lambda: self.app_context.open_folder("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_folder_audio.pack(side=tk.LEFT, padx=5)
+        self.btn_folder_audio.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Abrir Carpeta Audios (Control+Alt+A)"))
+
+        self.btn_update = tk.Button(row2, text="Actualizar yt-dlp (Alt+U)", command=self.update_ytdlp, bg="#222222", fg="#00FF00", font=("Arial", 11, "bold"))
         self.btn_update.pack(side=tk.RIGHT, padx=5)
-        self.btn_update.bind("<FocusIn>", lambda e: accessibility_manager.announce("Botón Actualizar yt-dlp (Alt+U)"))
+        self.btn_update.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Actualizar yt-dlp (Alt+U)"))
 
         # Estado y Progreso
         status_frame = tk.Frame(self.root, bg=self.color_scheme.bg_color, padx=10, pady=5)
@@ -158,7 +173,7 @@ class MainWindow:
         self.progress_bar.pack(fill=tk.X, pady=5)
         self.progress_bar['value'] = 0
 
-        status_frame.bind("<FocusIn>", lambda e: accessibility_manager.announce("Estado actual: " + self.lbl_status.cget("text")))
+        status_frame.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Estado actual: " + self.lbl_status.cget("text")))
 
         self.current_results = []
 
@@ -169,6 +184,10 @@ class MainWindow:
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
         self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context))
         self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context))
+        self.root.bind("<Control-Alt-v>", lambda e: self.app_context.open_folder("video"))
+        self.root.bind("<Control-Alt-V>", lambda e: self.app_context.open_folder("video"))
+        self.root.bind("<Control-Alt-a>", lambda e: self.app_context.open_folder("audio"))
+        self.root.bind("<Control-Alt-A>", lambda e: self.app_context.open_folder("audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
@@ -185,8 +204,13 @@ class MainWindow:
             "- Tecla Enter en Resultado ó Teclas Alt + V: Comenzar a descargar resultado como Video.\n",
             "- Teclas Alt + A: Comenzar a descargar resultado como Audio MP3.\n",
             "- Teclas Alt + H: Ver historial de archivos descargados (Videos y Audios).\n",
+            "- Teclas Control + Alt + V: Abrir carpeta de videos descargados.\n",
+            "- Teclas Control + Alt + A: Abrir carpeta de audios descargados.\n",
             "- Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
-            "- Tecla F1: Mostrar esta ayuda."
+            "- Tecla F1: Mostrar esta ayuda.\n",
+            "- \n",
+            "YTBlinds es una aplicación sencilla pensada para la gente no vidente o con baja visibilidad.\n",
+            "Su objetivo es descargar videos desde Youtube en formato audio ó video.\n"
         )
 
         help_text = "".join(help_text_tuple)
@@ -194,7 +218,7 @@ class MainWindow:
         # Ventana modal personalizada para asegurar ajuste automático y accesibilidad
         help_win = tk.Toplevel(self.root)
         help_win.title("Ayuda de Atajos - YTBlinds")
-        help_win.geometry("500x400")
+        help_win.geometry("600x600")
         help_win.configure(bg=self.color_scheme.bg_color)
 
         lbl_title = tk.Label(help_win, text="Ayuda de Atajos (Presione Escape para cerrar)", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
@@ -207,30 +231,34 @@ class MainWindow:
         txt_help.focus_set()
 
         btn_close = tk.Button(help_win, text="Cerrar (Escape)", command=help_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
-        btn_close.pack(pady=15)
+        btn_close.pack(pady=3)
 
-        help_win.bind("<Escape>", lambda e: help_win.destroy())
+        def cerrar_ventana_ayuda(e):
+            self.app_context.accessibility_manager.stop_announces()
+            help_win.destroy()
+
+        help_win.bind("<Escape>", cerrar_ventana_ayuda)
 
         ## Leyendo los textos de ayuda.
         def announce_help():
-            accessibility_manager.announce("Mostrando ventana de ayuda.")
+            self.app_context.accessibility_manager.announce("Mostrando ventana de ayuda.")
             for teclas_atajos in help_text_tuple:
-                accessibility_manager.announce(teclas_atajos)
+                self.app_context.accessibility_manager.announce(teclas_atajos)
 
         help_win.after(300, announce_help)
 
 
     def perform_search(self):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
 
         query = self.entry_search.get().strip()
         if not query:
-            accessibility_manager.announce("Escriba un término de búsqueda o URL.")
+            self.app_context.accessibility_manager.announce("Escriba un término de búsqueda o URL.")
             messagebox.showwarning("Aviso", "Escriba un término de búsqueda o URL de YouTube.")
             return
 
         self.lbl_status.config(text="Buscando...")
-        accessibility_manager.announce("Buscando videos, por favor espere.")
+        self.app_context.accessibility_manager.announce("Buscando videos, por favor espere.")
 
         def search_thread():
             if query.startswith("http://") or query.startswith("https://"):
@@ -251,7 +279,7 @@ class MainWindow:
     def show_video_info(self):
         selection = self.listbox_results.curselection()
         if not selection:
-            accessibility_manager.announce("Ningún elemento seleccionado para ver información.")
+            self.app_context.accessibility_manager.announce("Ningún elemento seleccionado para ver información.")
             messagebox.showwarning("Aviso", "Seleccione un video de la lista para ver su información detallada.")
             return
 
@@ -260,7 +288,7 @@ class MainWindow:
         url = item['url']
 
         self.lbl_status.config(text=f"Obteniendo información detallada...")
-        accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
+        self.app_context.accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
 
         def fetch_info_thread():
             details = self.app_context.downloader.get_video_details(url)
@@ -269,7 +297,7 @@ class MainWindow:
         threading.Thread(target=fetch_info_thread, daemon=True).start()
 
     def _display_video_info(self, details, fallback_title):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
 
         if not details:
             info_fields = [
@@ -302,7 +330,7 @@ class MainWindow:
                 ("Descripción", details['description'])
             ]
 
-        accessibility_manager.announce("Información detallada cargada. Use Tab para navegar entre los metadatos.")
+        self.app_context.accessibility_manager.announce("Información detallada cargada. Use Tab para navegar entre los metadatos.")
 
         # Ventana modal accesible de información con campos navegables por Tab
         info_win = tk.Toplevel(self.root)
@@ -344,13 +372,13 @@ class MainWindow:
                 txt_val.insert("1.0", str(value_text))
                 txt_val.bind("<Key>", bloquear_edicion)
                 txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
-                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt)))
+                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt)))
             else:
                 entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1)
                 entry_val.insert(0, str(value_text))
                 entry_val.config(state="readonly")
                 entry_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
-                entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
+                entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
 
         # Botón cerrar al final del Tab
         btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
@@ -358,7 +386,7 @@ class MainWindow:
 
         def close_details_win(e):
             info_win.destroy()
-            accessibility_manager.stop_announces()
+            self.app_context.accessibility_manager.stop_announces()
 
         info_win.bind("<Escape>", close_details_win)
         info_win.bind("WM_DELETE_WINDOW", close_details_win)
@@ -366,12 +394,12 @@ class MainWindow:
         scrollable_frame.winfo_children()[0].winfo_children()[1].focus_set()
 
     def update_results_ui(self, source_desc=""):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
 
         self.listbox_results.delete(0, tk.END)
         if not self.current_results:
             self.lbl_status.config(text="No se encontraron resultados.")
-            accessibility_manager.announce("No se encontraron resultados.")
+            self.app_context.accessibility_manager.announce("No se encontraron resultados.")
             return
 
         for item in self.current_results:
@@ -379,7 +407,7 @@ class MainWindow:
 
         status_msg = f"Se encontraron {len(self.current_results)} resultados (Fuente: {source_desc})."
         self.lbl_status.config(text=status_msg)
-        accessibility_manager.announce(f"Se encontraron {len(self.current_results)} resultados.")
+        self.app_context.accessibility_manager.announce(f"Se encontraron {len(self.current_results)} resultados.")
         self.listbox_results.focus_set()
         if self.current_results:
             self.listbox_results.selection_set(0)
@@ -388,28 +416,28 @@ class MainWindow:
     def on_select_item(self, event):
         selection = self.listbox_results.curselection()
         if selection:
-            accessibility_manager.stop_announces()
+            self.app_context.accessibility_manager.stop_announces()
             index = selection[0]
             title = self.current_results[index]['title']
-            accessibility_manager.announce(f"Seleccionado: {title}")
+            self.app_context.accessibility_manager.announce(f"Seleccionado: {title}")
 
     def on_search_focus(self):
         self.entry_search.focus_set()
         self.entry_search.select_range(0, "end")
 
     def on_search_key(self, event):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
         if event.keysym == "space":
             current_text = self.entry_search.get()
-            accessibility_manager.announce(current_text)
+            self.app_context.accessibility_manager.announce(current_text)
         elif event.char and event.char.isprintable():
-            accessibility_manager.announce(event.char)
+            self.app_context.accessibility_manager.announce(event.char)
 
     def download_selected(self, download_type):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
         selection = self.listbox_results.curselection()
         if not selection:
-            accessibility_manager.announce("Ningún elemento seleccionado para descargar.")
+            self.app_context.accessibility_manager.announce("Ningún elemento seleccionado para descargar.")
             messagebox.showwarning("Aviso", "Seleccione un video de la lista para descargar.")
             return
 
@@ -457,10 +485,12 @@ class MainWindow:
         self.btn_video.config(state=tk.DISABLED)
         self.btn_audio.config(state=tk.DISABLED)
         self.btn_history.config(state=tk.DISABLED)
+        self.btn_folder_video.config(state=tk.DISABLED)
+        self.btn_folder_audio.config(state=tk.DISABLED)
         self.btn_update.config(state=tk.DISABLED)
 
         def progress(msg):
-            accessibility_manager.stop_announces()
+            self.app_context.accessibility_manager.stop_announces()
             self.root.after(0, lambda: self.lbl_status.config(text=msg))
             try:
                 if "%" in msg:
@@ -473,7 +503,7 @@ class MainWindow:
                     ival = int(val)
                     if (ival % 5 == 0 or ival == 100) and ival != self.last_announced_percent:
                         self.last_announced_percent = ival
-                        accessibility_manager.announce(f"Descargando: {ival}%")
+                        self.app_context.accessibility_manager.announce(f"Descargando: {ival}%")
             except Exception:
                 pass
 
@@ -485,6 +515,8 @@ class MainWindow:
                 self.btn_video.config(state=tk.NORMAL),
                 self.btn_audio.config(state=tk.NORMAL),
                 self.btn_history.config(state=tk.NORMAL),
+                self.btn_folder_video.config(state=tk.NORMAL),
+                self.btn_folder_audio.config(state=tk.NORMAL),
                 self.btn_update.config(state=tk.NORMAL),
                 messagebox.showinfo("Estado de Descarga", msg) if success else messagebox.showerror("Error", msg)
             ])
@@ -493,15 +525,15 @@ class MainWindow:
             completion_callback=completion, title=title, video_id=video_id)
 
     def update_ytdlp(self):
-        accessibility_manager.stop_announces()
+        self.app_context.accessibility_manager.stop_announces()
         self.lbl_status.config(text="Actualizando yt-dlp...")
-        accessibility_manager.announce("Actualizando yt-dlp, por favor espere.")
+        self.app_context.accessibility_manager.announce("Actualizando yt-dlp, por favor espere.")
 
         def update_thread():
             success, msg = Updater.update_yt_dlp()
             def finish():
                 self.lbl_status.config(text=msg)
-                accessibility_manager.announce(msg)
+                self.app_context.accessibility_manager.announce(msg)
                 messagebox.showinfo("Actualización", msg)
             self.root.after(0, finish)
 
