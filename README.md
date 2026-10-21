@@ -4,6 +4,8 @@ YTBlinds es una aplicación de escritorio desarrollada en Python y CustomTkinter
 
 La intención de esta herramienta no es sustituir ninguna existente, solamente brindar una alternativa para aquellas personas ciegas que  tienen equipos de 32 bits antiguos. De ningún modo es algo con fines profesionales, sino con fines de ser práctico para un problema en específico. No fue pensado para verse bonito, sino en ser funcional para personas no videntes. Pueden haber errores.
 
+[Ver video de demostración](./demo/ytblinds_demo_linux.mp4)
+
 ## Requisitos e Instalación
 
 ### LINUX
