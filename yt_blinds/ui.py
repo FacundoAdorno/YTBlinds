@@ -5,6 +5,7 @@ from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import NamedTuple
 
+from yt_blinds.audio.audio_helpers import play_audio_file
 from yt_blinds.ui_.history_ui import HistoryWindow
 
 from .updater import Updater
@@ -49,6 +50,7 @@ class MainWindow:
 
     def confirm_exit(self):
         self.app_context.accessibility_manager.stop_announces()
+        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
         self.root.after(300, lambda: self.app_context.accessibility_manager.announce("¿Desea salir de la aplicación? Presione Escape nuevamente para confirmar, o Enter para cancelar."))
 
         exit_win = tk.Toplevel(self.root)
@@ -77,7 +79,11 @@ class MainWindow:
         btn_confirm = tk.Button(btn_frame, text="Salir (Escape)", command=self.root.destroy, bg="#222222", fg="#FF5555", font=("Arial", 11, "bold"))
         btn_confirm.pack(side=tk.LEFT, padx=10)
 
-        exit_win.bind("<Escape>", lambda e: self.root.destroy())
+        def _exit_app(event):
+            play_audio_file(self.app_context.project_path + "/assets/sounds/exit_window.wav")
+            self.root.destroy()
+
+        exit_win.bind("<Escape>", lambda e: _exit_app(e))
         exit_win.bind("<Return>", lambda e: exit_win.destroy())
 
     def create_widgets(self):
@@ -195,6 +201,7 @@ class MainWindow:
         self.listbox_results.bind("<I>", lambda e: self.show_video_info())
 
     def show_help(self):
+        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
         help_text_tuple = (
             "- Teclas Tab y Shift+Tab: Moverse entre elementos.\n",
             "- Teclas Alt + B: Ir al cuadro de búsqueda.\n",
@@ -235,6 +242,7 @@ class MainWindow:
 
         def cerrar_ventana_ayuda(e):
             self.app_context.accessibility_manager.stop_announces()
+            play_audio_file(self.app_context.project_path + "/assets/sounds/close_window.wav")
             help_win.destroy()
 
         help_win.bind("<Escape>", cerrar_ventana_ayuda)
@@ -258,7 +266,7 @@ class MainWindow:
             return
 
         self.lbl_status.config(text="Buscando...")
-        self.app_context.accessibility_manager.announce("Buscando videos, por favor espere.")
+        self.app_context.accessibility_manager.announce(f"Buscando videos sobre {query}.")
 
         def search_thread():
             if query.startswith("http://") or query.startswith("https://"):
@@ -288,7 +296,7 @@ class MainWindow:
         url = item['url']
 
         self.lbl_status.config(text=f"Obteniendo información detallada...")
-        self.app_context.accessibility_manager.announce("Obteniendo información detallada del video, por favor espere.")
+        self.app_context.accessibility_manager.announce("Obteniendo información detallada del video.")
 
         def fetch_info_thread():
             details = self.app_context.downloader.get_video_details(url)
@@ -297,6 +305,7 @@ class MainWindow:
         threading.Thread(target=fetch_info_thread, daemon=True).start()
 
     def _display_video_info(self, details, fallback_title):
+        play_audio_file(self.app_context.project_path + "/assets/sounds/open_window.wav")
         self.app_context.accessibility_manager.stop_announces()
 
         if not details:
@@ -311,7 +320,7 @@ class MainWindow:
         else:
             dur_min = details['duration'] // 60 if details['duration'] else 0
             dur_sec = details['duration'] % 60 if details['duration'] else 0
-            duration_str = f"{dur_min} min {dur_sec} seg" if details['duration'] else "Desconocida"
+            duration_str = f"{dur_min} minutos {dur_sec} segundos" if details['duration'] else "Desconocida"
             categories_str = ", ".join(details['categories']) if details['categories'] else "Desconocida"
 
             upload_date_str = details['upload_date']
@@ -354,8 +363,12 @@ class MainWindow:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=5)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        def close_details_win(e):
+            self.app_context.accessibility_manager.stop_announces()
+            play_audio_file(self.app_context.project_path + "/assets/sounds/close_window.wav")
+            info_win.destroy()
+
         # Crear campos individuales navegables mediante Tab
-        valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
         # Bloquear la escritura y modificación del contenido
         def bloquear_edicion(event):
             return "break"
@@ -366,27 +379,31 @@ class MainWindow:
             lbl = tk.Label(field_frame, text=f"{label_text}:", bg=self.color_scheme.bg_color, fg=self.color_scheme.accent_color, font=("Arial", 12, "bold"), anchor="w")
             lbl.pack(anchor=tk.W, padx=5, pady=2)
 
+            def tab_metadata(event, lt, vt):
+                valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
+                play_audio_file(self.app_context.project_path + "/assets/sounds/tab.wav")
+                self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt))
+
             if label_text == "Descripción":
                 # Usar Textarea accesible con scroll para la descripción
                 txt_val = tk.Text(field_frame, height=8, wrap=tk.WORD, font=("Arial", 12), bg="#111111", fg="#FFFFFF", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1, takefocus=True)
                 txt_val.insert("1.0", str(value_text))
                 txt_val.bind("<Key>", bloquear_edicion)
                 txt_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
-                txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt)))
+                max_chars_toread = self.app_context.config['ACCESSIBILITY'].getint('detailed_video.description.max_chars_read', 500)
+                if max_chars_toread > 0:
+                    txt_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text[0:max_chars_toread]: tab_metadata(e, lt, vt))
+                    txt_val.bind("<Escape>", close_details_win)
             else:
                 entry_val = tk.Entry(field_frame, font=("Arial", 13), bg="#111111", fg="#000000", insertbackground=self.color_scheme.fg_color, relief=tk.SOLID, bd=1)
                 entry_val.insert(0, str(value_text))
                 entry_val.config(state="readonly")
                 entry_val.pack(fill=tk.X, expand=True, padx=5, pady=2)
-                entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: self.app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt,metadata_value=vt)))
+                entry_val.bind("<FocusIn>", lambda e, lt=label_text, vt=value_text: tab_metadata(e,lt, vt))
 
         # Botón cerrar al final del Tab
         btn_close = tk.Button(scrollable_frame, text="Cerrar (Escape)", command=info_win.destroy, bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_close.pack(pady=15, padx=5, anchor=tk.W)
-
-        def close_details_win(e):
-            info_win.destroy()
-            self.app_context.accessibility_manager.stop_announces()
 
         info_win.bind("<Escape>", close_details_win)
         info_win.bind("WM_DELETE_WINDOW", close_details_win)
@@ -427,6 +444,8 @@ class MainWindow:
 
     def on_search_key(self, event):
         self.app_context.accessibility_manager.stop_announces()
+        if event.keysym == "BackSpace":
+            self.app_context.accessibility_manager.announce("Borrar")
         if event.keysym == "space":
             current_text = self.entry_search.get()
             self.app_context.accessibility_manager.announce(current_text)

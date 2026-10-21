@@ -18,6 +18,9 @@ class AppContext:
 
         self.accessibility_manager = AccessibilityManager(self)
 
+        # Specify the base path for the project
+        self.project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
     def _load_config(self):
         config_parser = configparser.ConfigParser()
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

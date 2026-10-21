@@ -28,7 +28,13 @@ class HistoryWindow:
 
         entry_filter = tk.Entry(filter_frame, font=("Arial", 12), bg="#222222", fg=color_scheme.fg_color, insertbackground=color_scheme.fg_color)
         entry_filter.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        entry_filter.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Campo de filtro por nombre."))
+        entry_filter.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Posicionado en campo de filtro por nombre."))
+        entry_filter.bind("<Control-a>", lambda e: (entry_filter.select_range(0, tk.END), "break")[1])
+
+        # Botón de Filtrar al lado
+        btn_filter = tk.Button(filter_frame, text="Filtrar", bg=color_scheme.bg_color, fg=color_scheme.accent_color, font=("Arial", 11, "bold"), relief=tk.FLAT, cursor="hand2")
+        btn_filter.pack(side=tk.LEFT, padx=5)
+        btn_filter.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Botón Filtrar"))
 
         # Selector de tipo (Video / Audio)
         type_frame = tk.Frame(history_win, bg=color_scheme.bg_color)
@@ -36,25 +42,36 @@ class HistoryWindow:
 
         current_type = tk.StringVar(value="video")
 
+        def on_filter_key(event, context):
+            context.accessibility_manager.stop_announces()
+            if event.keysym == "BackSpace":
+                context.accessibility_manager.announce("Borrar")
+            if event.keysym == "space":
+                current_text = entry_filter.get()
+                context.accessibility_manager.announce(current_text)
+            elif event.char and event.char.isprintable():
+                context.accessibility_manager.announce(event.char)
+
         def load_history_items():
             listbox_history.delete(0, tk.END)
             q = entry_filter.get().strip()
             t = current_type.get()
             items = context.history_manager.get_history(download_type=t, filter_query=q)
             for item in items:
-                display_str = f"[{item[2]}] {item[0]} - Ruta: {item[1]}"
+                display_str = f"[{t}] {item[0]} - Ruta: {item[1]} - Fecha: {item[2]}"
                 listbox_history.insert(tk.END, display_str)
-            context.accessibility_manager.announce(f"Se encontraron {len(items)} elements en {t}s.")
+            context.accessibility_manager.announce(f"Se encontraron {len(items)} elementos en {t}s.")
 
         btn_video_tab = tk.Button(type_frame, text="Videos", command=lambda: [current_type.set("video"), load_history_items()], bg="#222222", fg=color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_video_tab.pack(side=tk.LEFT, padx=5)
-        btn_video_tab.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Pestaña Videos"))
+        btn_video_tab.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Filtro Sólo Videos"))
 
         btn_audio_tab = tk.Button(type_frame, text="Audios", command=lambda: [current_type.set("audio"), load_history_items()], bg="#222222", fg=color_scheme.accent_color, font=("Arial", 11, "bold"))
         btn_audio_tab.pack(side=tk.LEFT, padx=5)
-        btn_audio_tab.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Pestaña Audios"))
+        btn_audio_tab.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Filtro Sólo Audios"))
 
-        entry_filter.bind("<KeyRelease>", lambda e: load_history_items())
+        entry_filter.bind("<KeyPress>", lambda e: on_filter_key(e, context))
+        entry_filter.bind("<Return>", lambda e: load_history_items())
 
         # Listbox navegable de historial
         list_container = tk.Frame(history_win, bg=color_scheme.bg_color)
