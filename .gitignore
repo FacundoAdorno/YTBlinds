@@ -4,8 +4,10 @@ __pycache__
 descargados
 old
 
+
 #Files
 *.mp3
 *.mp4
+!demo/*.mp4
 *.pyc
 *.db
