@@ -1,5 +1,6 @@
 Tissman https://freesound.org/people/Tissman/) is the creator of the following sounds:
 - close_window.wav
+- enter.wav
 - error.wav
 - exit_window.wav
 - ok.wav

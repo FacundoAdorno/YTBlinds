@@ -162,7 +162,7 @@ class Downloader:
                 ydl_opts['progress_hooks'] = [hook]
 
             try:
-                self.app_context.accessibility_manager.announce("Iniciando descarga...")
+                self.app_context.accessibility_manager.announce(f"Iniciando descarga de {download_type}...")
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=True)
                     if not downloaded_file_path[0] and info:

@@ -266,6 +266,7 @@ class MainWindow:
             return
 
         self.lbl_status.config(text="Buscando...")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/enter.wav")
         self.app_context.accessibility_manager.announce(f"Buscando videos sobre {query}.")
 
         def search_thread():
@@ -496,7 +497,8 @@ class MainWindow:
             self._start_real_download(url, download_type, title=video_title, video_id=video_id)
 
     def _start_real_download(self, url, download_type, title=None, video_id=None):
-        self.lbl_status.config(text=f"Iniciando descarga...")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/low/tab_low.wav")
+        self.lbl_status.config(text=f"Iniciando descarga de {download_type}...")
         self.progress_bar['value'] = 0
         self.last_announced_percent = -1
 

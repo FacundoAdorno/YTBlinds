@@ -2,6 +2,8 @@ import os
 import tkinter as tk
 from pathlib import Path
 
+from ..audio.audio_helpers import play_audio_file
+
 
 def resolver_ruta(ruta_texto):
     """
@@ -65,6 +67,7 @@ class HistoryWindow:
                 context.accessibility_manager.announce(event.char)
 
         def load_history_items():
+            play_audio_file(context.project_path + "/assets/sounds/enter.wav")
             listbox_history.delete(0, tk.END)
             q = entry_filter.get().strip()
             t = current_type.get()
