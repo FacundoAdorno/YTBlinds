@@ -22,7 +22,8 @@ class HistoryWindow:
     @staticmethod
     def show_history_window(root, color_scheme, context):
         context.accessibility_manager.stop_announces()
-        context.accessibility_manager.announce("Abriendo historial de archivos descargados.")
+        play_audio_file(context.project_path + "/assets/sounds/low/open_window_low.wav")
+        context.accessibility_manager.announce("Abriendo historial de archivos descargados. Navegue filtros mediante Tab. Cierre con Escape.")
 
         history_win = tk.Toplevel(root)
         history_win.title("Historial de Archivos Descargados - YTBlinds")
@@ -44,11 +45,14 @@ class HistoryWindow:
         entry_filter.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         entry_filter.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Posicionado en campo de filtro por nombre."))
         entry_filter.bind("<Control-a>", lambda e: (entry_filter.select_range(0, tk.END), "break")[1])
+        history_win.bind("<Alt-b>", lambda e: entry_filter.focus_set())
 
         # Botón de Filtrar al lado
         btn_filter = tk.Button(filter_frame, text="Filtrar", bg=color_scheme.bg_color, fg=color_scheme.accent_color, font=("Arial", 11, "bold"), relief=tk.FLAT, cursor="hand2")
         btn_filter.pack(side=tk.LEFT, padx=5)
         btn_filter.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Botón Filtrar"))
+        btn_filter.bind("<Return>", lambda e: [play_audio_file(context.project_path + "/assets/sounds/low/enter_low.wav"), load_history_items()])
+        btn_filter.bind("<space>", lambda e: [play_audio_file(context.project_path + "/assets/sounds/low/enter_low.wav"), load_history_items()])
 
         # Selector de tipo (Video / Audio)
         type_frame = tk.Frame(history_win, bg=color_scheme.bg_color)
@@ -66,7 +70,7 @@ class HistoryWindow:
             elif event.char and event.char.isprintable():
                 context.accessibility_manager.announce(event.char)
 
-        def load_history_items():
+        def load_history_items(focus_on_list=True):
             listbox_history.delete(0, tk.END)
             q = entry_filter.get().strip()
             t = current_type.get()
@@ -74,7 +78,7 @@ class HistoryWindow:
             for item in items:
                 display_str = f"[{t.upper()}]. {item[0]}. Ruta: {resolver_ruta(item[1])}. Fecha de descarga: {item[2]}"
                 listbox_history.insert(tk.END, display_str)
-            if (len(items) > 0):
+            if (len(items) > 0 and focus_on_list):
                 listbox_history.focus_set()
             context.accessibility_manager.announce(f"Se encontraron {len(items)} elementos en {t}s.")
 
@@ -102,7 +106,7 @@ class HistoryWindow:
             selectforeground="#000000"
         )
         listbox_history.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        listbox_history.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Lista de archivos descargados. Use flechas arriba y abajo para navegar."))
+        listbox_history.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Posicionado en resultados historial. Navegue con flechas arriba y abajo."))
 
         scrollbar = tk.Scrollbar(list_container, orient=tk.VERTICAL, command=listbox_history.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -123,7 +127,7 @@ class HistoryWindow:
         btn_close.pack(pady=10)
         btn_close.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Botón Cerrar"))
 
-        history_win.bind("<Escape>", lambda e: history_win.destroy())
+        history_win.bind("<Escape>", lambda e: [play_audio_file(context.project_path + "/assets/sounds/low/close_window_low.wav"), history_win.destroy()])
 
-        load_history_items()
+        load_history_items(focus_on_list=False)
         history_win.after(300, lambda: entry_filter.focus_set())
