@@ -3,7 +3,9 @@ venv
 __pycache__
 descargados
 old
-
+# ignoro directorios generados por pyinstaller
+dist
+build
 
 #Files
 *.mp3
@@ -11,3 +13,5 @@ old
 !demo/*.mp4
 *.pyc
 *.db
+# archivo generado por pyinstaller
+YTBlinds.spec

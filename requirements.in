@@ -1,7 +1,0 @@
-# YTBlinds - Especificación de Paquetes
-# Instalar dependencias Python con: pip install -r requirements.txt
-pyttsx3
-yt-dlp>=2023.10.07
-
-# Dependencias del Sistema Linux (Requeridas):
-# python3-tk, espeak (o espeak-ng), ffmpeg
