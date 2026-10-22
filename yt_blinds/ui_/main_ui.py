@@ -280,8 +280,10 @@ class MainWindow:
             self.app_context.accessibility_manager.announce("Borrar")
         if event.keysym == "space":
             current_text = self.entry_search.get()
+            play_audio_file(self.app_context.project_path + "/assets/sounds/low/spacebar_low.wav")
             self.app_context.accessibility_manager.announce(current_text)
         elif event.char and event.char.isprintable():
+            play_audio_file(self.app_context.project_path + "/assets/sounds/akey.wav")
             self.app_context.accessibility_manager.announce(event.char)
 
     def download_selected(self, download_type):

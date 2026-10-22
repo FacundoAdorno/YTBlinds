@@ -66,8 +66,10 @@ class HistoryWindow:
                 context.accessibility_manager.announce("Borrar")
             if event.keysym == "space":
                 current_text = entry_filter.get()
+                play_audio_file(context.project_path + "/assets/sounds/low/spacebar_low.wav")
                 context.accessibility_manager.announce(current_text)
             elif event.char and event.char.isprintable():
+                play_audio_file(context.project_path + "/assets/sounds/akey.wav")
                 context.accessibility_manager.announce(event.char)
 
         def load_history_items(focus_on_list=True):
