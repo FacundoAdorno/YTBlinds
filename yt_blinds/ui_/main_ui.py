@@ -6,9 +6,9 @@ from tkinter import messagebox, ttk
 from typing import NamedTuple
 
 from yt_blinds.audio.audio_helpers import play_audio_file
-from yt_blinds.ui_.history_ui import HistoryWindow
 
-from .updater import Updater
+from ..updater import Updater
+from .history_ui import HistoryWindow
 
 
 class MainWindow:

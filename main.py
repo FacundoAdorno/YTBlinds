@@ -9,8 +9,8 @@ except ImportError:
     print("Error: Tkinter no está instalado en el sistema operativo.")
     sys.exit(1)
 
-from yt_blinds.ui import MainWindow
 from yt_blinds.context.app_context import AppContext
+from yt_blinds.ui_.main_ui import MainWindow
 
 
 def main():
