@@ -160,7 +160,7 @@ class MainWindow:
         self.btn_folder_video.pack(side=tk.LEFT, padx=5)
         self.btn_folder_video.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Abrir Carpeta Videos (Control+Alt+V)"))
 
-        self.btn_folder_audio = tk.Button(row2, text="Carpeta Audios (Ctrl+Alt+A)", command=lambda: self.app_context.open_folder("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
+        self.btn_folder_audio = tk.Button(row2, text="Carpeta Audios (Ctrl+Alt+F)", command=lambda: self.app_context.open_folder("audio"), bg="#222222", fg=self.color_scheme.accent_color, font=("Arial", 11, "bold"))
         self.btn_folder_audio.pack(side=tk.LEFT, padx=5)
         self.btn_folder_audio.bind("<FocusIn>", lambda e: self.app_context.accessibility_manager.announce("Botón Abrir Carpeta Audios (Control+Alt+A)"))
 
@@ -190,10 +190,13 @@ class MainWindow:
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
         self.root.bind("<Alt-h>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context))
         self.root.bind("<Alt-H>", lambda e: HistoryWindow.show_history_window(self.root, self.color_scheme, self.app_context))
-        self.root.bind("<Control-Alt-v>", lambda e: self.app_context.open_folder("video"))
-        self.root.bind("<Control-Alt-V>", lambda e: self.app_context.open_folder("video"))
-        self.root.bind("<Control-Alt-f>", lambda e: self.app_context.open_folder("audio"))
-        self.root.bind("<Control-Alt-F>", lambda e: self.app_context.open_folder("audio"))
+        def abrir_carpeta(event, tipo):
+            self.app_context.accessibility_manager.announce(f"Abriendo carpeta de {tipo}s.")
+            self.app_context.open_folder(tipo)
+        self.root.bind("<Control-Alt-v>", lambda e: abrir_carpeta(e, "video"))
+        self.root.bind("<Control-Alt-V>", lambda e: abrir_carpeta(e, "video"))
+        self.root.bind("<Control-Alt-f>", lambda e: abrir_carpeta(e, "audio"))
+        self.root.bind("<Control-Alt-F>", lambda e: abrir_carpeta(e, "audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
         self.root.bind("<Escape>", lambda e: self.root.destroy())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
