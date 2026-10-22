@@ -67,7 +67,6 @@ class HistoryWindow:
                 context.accessibility_manager.announce(event.char)
 
         def load_history_items():
-            play_audio_file(context.project_path + "/assets/sounds/enter.wav")
             listbox_history.delete(0, tk.END)
             q = entry_filter.get().strip()
             t = current_type.get()
@@ -88,7 +87,7 @@ class HistoryWindow:
         btn_audio_tab.bind("<FocusIn>", lambda e: context.accessibility_manager.announce("Filtro Sólo Audios"))
 
         entry_filter.bind("<KeyPress>", lambda e: on_filter_key(e, context))
-        entry_filter.bind("<Return>", lambda e: load_history_items())
+        entry_filter.bind("<Return>", lambda e: [play_audio_file(context.project_path + "/assets/sounds/low/enter_low.wav"), load_history_items()])
 
         # Listbox navegable de historial
         list_container = tk.Frame(history_win, bg=color_scheme.bg_color)
@@ -113,6 +112,7 @@ class HistoryWindow:
             selection = listbox_history.curselection()
             if selection:
                 context.accessibility_manager.stop_announces()
+                play_audio_file(context.project_path + "/assets/sounds/arrow_key.wav")
                 idx = selection[0]
                 text = listbox_history.get(idx)
                 context.accessibility_manager.announce(f"Seleccionado: {text}")

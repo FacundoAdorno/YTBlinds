@@ -269,7 +269,7 @@ class MainWindow:
             return
 
         self.lbl_status.config(text="Buscando...")
-        play_audio_file(self.app_context.project_path + "/assets/sounds/enter.wav")
+        play_audio_file(self.app_context.project_path + "/assets/sounds/low/enter_low.wav")
         self.app_context.accessibility_manager.announce(f"Buscando videos sobre {query}.")
 
         def search_thread():
@@ -440,6 +440,7 @@ class MainWindow:
         selection = self.listbox_results.curselection()
         if selection:
             self.app_context.accessibility_manager.stop_announces()
+            play_audio_file(self.app_context.project_path + "/assets/sounds/arrow_key.wav")
             index = selection[0]
             title = self.current_results[index]['title']
             self.app_context.accessibility_manager.announce(f"Seleccionado: {title}")
