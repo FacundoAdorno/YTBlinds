@@ -1,7 +1,7 @@
 import tkinter as tk
 from datetime import datetime
 
-from ..audio.audio_helpers import play_audio_file
+from ..utils.audio_helpers import play_audio_file
 
 
 class DetailWindow:

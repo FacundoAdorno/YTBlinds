@@ -1,6 +1,5 @@
 # Dependencias de Python
 pyttsx3
-yt-dlp>=2023.10.07
 
 # Dependencias del Sistema Linux (Instalar mediante gestor de paquetes del sistema):
 # Debian/Ubuntu/Mint: sudo apt-get install python3-tk espeak ffmpeg

@@ -1,16 +1,15 @@
 import locale
 import threading
 import tkinter as tk
-from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import NamedTuple
 
-from yt_blinds.audio.audio_helpers import play_audio_file
+from yt_blinds.utils.audio_helpers import play_audio_file
 
 from ..updater import Updater
 from .detail_ui import DetailWindow
-from .history_ui import HistoryWindow
 from .help_ui import HelpWindow
+from .history_ui import HistoryWindow
 
 
 class MainWindow:

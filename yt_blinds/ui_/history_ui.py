@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from pathlib import Path
 
-from ..audio.audio_helpers import play_audio_file
+from ..utils.audio_helpers import play_audio_file
 
 
 def resolver_ruta(ruta_texto):

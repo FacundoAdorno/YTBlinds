@@ -2,10 +2,21 @@ import json
 import os
 import sys
 import urllib.request
-import zipfile
+import urllib.parse
+
+# Añadir vendor al sys.path para importar yt_dlp localmente desde vendor/yt_dlp
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+vendor_dir = os.path.join(base_dir, "vendor")
+if vendor_dir not in sys.path:
+    sys.path.insert(0, vendor_dir)
+
+try:
+    import yt_dlp
+except ImportError:
+    yt_dlp = None
 
 class Downloader:
-    """Encargado de buscar y descargar videos usando yt-dlp (con soporte robusto)."""
+    """Encargado de buscar y descargar usando el paquete vendored de yt-dlp en vendor/yt_dlp."""
 
     def __init__(self, context):
         if context is None:
@@ -23,16 +34,14 @@ class Downloader:
                 'url': query
             }], "URL Directa"
 
-        try:
-            import yt_dlp
-        except ImportError:
+        if yt_dlp is None:
             return self._fallback_search(query, max_results)
 
         results = []
         source_used = "Desconocido"
 
+        # 1. Búsqueda con yt_dlp (vendored)
         try:
-            import yt_dlp
             ydl_opts = {
                 'format': 'best',
                 'extract_flat': True,
@@ -54,24 +63,16 @@ class Downloader:
                                 'url': entry.get('url') or f"https://www.youtube.com/watch?v={entry.get('id')}"
                             })
             if results:
-                source_used = "yt-dlp"
+                source_used = "yt-dlp (Vendored)"
         except Exception:
             pass
 
+        # 2. Fallback: API de sugerencias JSON de YouTube
         if not results:
             try:
-                import json
-                import urllib.parse
-                import urllib.request
-
                 encoded_query = urllib.parse.quote(query)
                 suggestions_url = f"https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q={encoded_query}"
-
-                req = urllib.request.Request(
-                    suggestions_url,
-                    headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-                )
-
+                req = urllib.request.Request(suggestions_url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=5) as response:
                     data = json.loads(response.read().decode('utf-8'))
                     if len(data) > 1 and isinstance(data[1], list):
@@ -86,35 +87,27 @@ class Downloader:
             except Exception:
                 pass
 
+        # 3. Fallback local
         if not results:
-            results = [{
-                'id': f'res_{i}',
-                'title': f"Resultado {i+1} para '{query}'",
-                'url': f"https://www.youtube.com/results?search_query={urllib.parse.quote(query)}"
-            } for i in range(min(5, max_results))]
-            source_used = "Modo de Respaldo Local"
+            results, source_used = self._fallback_search(query, max_results)
 
         return results, source_used
 
     def _fallback_search(self, query, max_results):
         return [{
             'id': 'mock1',
-            'title': f"[Modo Sin Dependencia] Resultado simulado para: {query}",
+            'title': f"[Modo Sin Conexión] Resultado simulado para: {query}",
             'url': f"https://www.youtube.com/results?search_query={query}"
         }], "Modo de Respaldo Local"
 
-    def download_media(self, url, download_type='video', progress_callback=None, completion_callback=None, title=None, video_id=None):
+    def download_media(self, url, download_type='video', output_path=None, progress_callback=None, completion_callback=None, title=None, video_id=None):
         import threading
 
         from .history import sanitize_filename
 
         def run():
-            output_path = self.app_context.get_download_path(download_type)
-            output_path = output_path.strip()
             if not output_path:
-                download_dir = os.path.expanduser("~/Descargas")
-                if not os.path.exists(download_dir):
-                    download_dir = os.getcwd()
+                download_dir = self.app_context.get_download_path(download_type)
             else:
                 # Si el valor en configuración tiene ~ en su config (referenciando al HOME del usario), lo expando.
                 # Sino, es una ruta absoluta.
@@ -123,11 +116,9 @@ class Downloader:
             vid = video_id or url
             self.app_context.history_manager.check_and_cleanup_missing_file(vid, download_type, download_dir)
 
-            try:
-                import yt_dlp
-            except ImportError:
+            if yt_dlp is None:
                 if completion_callback:
-                    completion_callback(False, "yt-dlp no está instalado. Instálelo o use la opción de actualización.")
+                    completion_callback(False, "El paquete vendored yt_dlp no está disponible en vendor/yt_dlp.")
                 return
 
             ydl_opts = {
@@ -205,8 +196,9 @@ class Downloader:
         thread.start()
 
     def get_video_details(self, url):
+        if yt_dlp is None:
+            return None
         try:
-            import yt_dlp
             ydl_opts = {'quiet': True, 'no_warnings': True, 'noproxy': True, 'extract_flat': False}
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 if url.startswith("ytsearch:"):
