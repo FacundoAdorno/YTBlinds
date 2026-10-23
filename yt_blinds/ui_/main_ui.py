@@ -385,11 +385,21 @@ class MainWindow:
 
         def update_thread():
             success, msg = Updater.update_yt_dlp()
-            def finish():
+            def finish(was_success):
+                success_msg = ""
+                if (was_success):
+                    print("Código fuente de yt-dlp fue actualizado correctamente.")
+                    success_msg = "Se cerrará la aplicación para hacer efectivos los cambios.\nPresione Enter para finalizar..."
+                mensaje = f"{msg}. {success_msg}"
                 self.lbl_status.config(text=msg)
-                self.app_context.accessibility_manager.announce(msg)
-                messagebox.showinfo("Actualización", msg)
-            self.root.after(0, finish)
+                self.app_context.accessibility_manager.announce(mensaje)
+                play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
+                messagebox.showinfo("Actualización", mensaje)
+                if (was_success):
+                    play_audio_file(self.app_context.project_path + "/assets/sounds/low/exit_window_low.wav")
+                    self.app_context.accessibility_manager.stop_announces()
+                    self.root.destroy()
+            self.root.after(0, finish(success))
 
         threading.Thread(target=update_thread, daemon=True).start()
 
