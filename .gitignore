@@ -6,6 +6,7 @@ old
 # ignoro directorios generados por pyinstaller
 dist
 build
+vendor/yt_dlp
 
 #Files
 *.mp3

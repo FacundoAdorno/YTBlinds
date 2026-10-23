@@ -37,11 +37,8 @@ class Updater:
                 return False, "No se encontró el paquete yt_dlp en el archivo descargado."
 
             target_vendor_yt_dlp = vendor_dir / "yt_dlp"
-            print("Existe ? ", target_vendor_yt_dlp.exists())
             if target_vendor_yt_dlp.exists():
-                print("Entre")
                 shutil.rmtree(target_vendor_yt_dlp)
-            print("Existe ? ", target_vendor_yt_dlp.exists())
 
             target_vendor_yt_dlp.mkdir(parents=True, exist_ok=True)
             shutil.copytree(src_yt_dlp, target_vendor_yt_dlp, dirs_exist_ok=True)
