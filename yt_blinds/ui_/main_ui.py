@@ -21,6 +21,8 @@ class MainWindow:
 
         self.root = root
         self.root.title("Descargador Accesible de YouTube - YTBlinds")
+        icon_image = tk.PhotoImage(file=context.project_path + '/assets/images/ytblinds.png')
+        root.iconphoto(False, icon_image)
         self.root.geometry("{w}x{h}".format(w=self.app_context.config['GENERAL']['win_height'],h=self.app_context.config['GENERAL']['win_width']))
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
