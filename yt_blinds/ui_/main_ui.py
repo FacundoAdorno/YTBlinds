@@ -49,6 +49,19 @@ class MainWindow:
         self.root.after(300, lambda: self.app_context.accessibility_manager.announce("Presione F1 para ayuda. Presione Escape para salir."))
         self.root.after(310, lambda: self.entry_search.focus_set())
 
+    def close_app(self, event=None):
+        import sys
+        self.app_context.accessibility_manager.stop_announces()
+        try:
+            play_audio_file(self.app_context.project_path + "/assets/sounds/low/exit_window_low.wav")
+        except Exception:
+            pass
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
+        sys.exit(0)
+
     def confirm_exit(self):
         self.app_context.accessibility_manager.stop_announces()
         play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
@@ -77,12 +90,11 @@ class MainWindow:
         btn_cancel.pack(side=tk.LEFT, padx=10)
         btn_cancel.focus_set()
 
-        btn_confirm = tk.Button(btn_frame, text="Salir (Escape)", command=self.root.destroy, bg="#222222", fg="#FF5555", font=("Arial", 11, "bold"))
+        btn_confirm = tk.Button(btn_frame, text="Salir (Escape)", command=self.close_app, bg="#222222", fg="#FF5555", font=("Arial", 11, "bold"))
         btn_confirm.pack(side=tk.LEFT, padx=10)
 
         def _exit_app(event):
-            play_audio_file(self.app_context.project_path + "/assets/sounds/low/exit_window_low.wav")
-            self.root.destroy()
+            self.close_app()
 
         exit_win.bind("<Escape>", lambda e: _exit_app(e))
         exit_win.bind("<Return>", lambda e: exit_win.destroy())
@@ -199,7 +211,7 @@ class MainWindow:
         self.root.bind("<Control-Alt-f>", lambda e: abrir_carpeta(e, "audio"))
         self.root.bind("<Control-Alt-F>", lambda e: abrir_carpeta(e, "audio"))
         self.root.bind("<Alt-u>", lambda e: self.update_ytdlp())
-        self.root.bind("<Escape>", lambda e: self.root.destroy())
+        self.root.bind("<Escape>", lambda e: self.close_app())
         self.entry_search.bind("<Return>", lambda e: self.perform_search())
         self.listbox_results.bind("<i>", lambda e: self.show_video_info())
         self.listbox_results.bind("<I>", lambda e: self.show_video_info())
@@ -397,8 +409,7 @@ class MainWindow:
                 messagebox.showinfo("Actualización", mensaje)
                 if (was_success):
                     play_audio_file(self.app_context.project_path + "/assets/sounds/low/exit_window_low.wav")
-                    self.app_context.accessibility_manager.stop_announces()
-                    self.root.destroy()
+                    self.close_app()
             self.root.after(0, finish(success))
 
         threading.Thread(target=update_thread, daemon=True).start()
