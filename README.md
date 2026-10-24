@@ -1,5 +1,9 @@
 # YTBlinds - Descargador Accesible de YouTube
 
+<p align="center">
+    <img src="./assets/images/ytblinds.ico"> </img>
+<p>
+
 YTBlinds es una aplicación de escritorio desarrollada en Python y Tkinter, creada de forma específica para asistir a personas ciegas que necesiten una herramienta completamente accesible, fluida y operable mediante lectores de pantalla. Esta aplicación está pensada para funcionar tanto en sistemas de 32 y 64 bits.
 
 La intención de esta herramienta no es sustituir ninguna existente, solamente brindar una alternativa para aquellas personas ciegas que  tienen equipos de 32 bits antiguos. De ningún modo es algo con fines profesionales, sino con fin de resolver de forma práctica un problema en específico. No fue pensado para verse bonito, sino en ser funcional para personas no videntes. Pueden haber errores.

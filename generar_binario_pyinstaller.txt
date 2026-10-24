@@ -1,3 +1,3 @@
 - Ejecutar este comando en cada plataforma (Linux o Windows) para generar un binario portable:
 
-pyinstaller --onedir --name="YTBlinds" --paths="vendor" --add-data="yt_blinds/config:yt_blinds/config" --add-data="data:data" --add-data="assets:assets" --add-data="vendor:vendor" --icon="./assets/images/ytblinds.ico" --collect-all yt_dlp main.py
+pyinstaller --onedir --name="YTBlinds" --paths="vendor" --add-data="yt_blinds/config:yt_blinds/config" --add-data="data:data" --add-data="assets:assets" --add-data="vendor:vendor" --add-data="lib:lib" --icon="./assets/images/ytblinds.ico" --collect-all yt_dlp main.py
