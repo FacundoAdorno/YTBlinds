@@ -4,6 +4,15 @@ from datetime import datetime
 from ..utils.audio_helpers import play_audio_file
 
 
+def format_size(size_bytes):
+    if not size_bytes or size_bytes <= 0:
+        return "Desconocido"
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if size_bytes < 1024.0:
+            return f"{size_bytes:.2f} {unit}"
+        size_bytes /= 1024.0
+    return f"{size_bytes:.2f} TB"
+
 class DetailWindow:
     """Ventana modal accesible para mostrar información detallada de un video."""
     @staticmethod
@@ -52,12 +61,17 @@ def _display_video_info(root, color_scheme, app_context, listbox_results, select
         except ValueError:
             pass
 
+        v_size_str = format_size(details.get('video_size', 0))
+        a_size_str = format_size(details.get('audio_size', 0))
+
         info_fields = [
             ("Título", details['title']),
             ("Canal", details['uploader']),
             ("Fecha de subida", upload_date_str),
             ("Duración", duration_str),
             ("Categoría", categories_str),
+            ("Tamaño Estimado Video", v_size_str),
+            ("Tamaño Estimado Audio", a_size_str),
             ("Descripción", details['description'])
         ]
 

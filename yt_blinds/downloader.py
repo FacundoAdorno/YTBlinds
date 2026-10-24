@@ -209,14 +209,37 @@ class Downloader:
 
                 info = ydl.extract_info(url, download=False)
                 if info:
+                    video_size = self._estimate_size(info, 'video')
+                    audio_size = self._estimate_size(info, 'audio')
                     return {
                         'title': info.get('title', 'Desconocido'),
                         'uploader': info.get('uploader') or info.get('channel', 'Desconocido'),
                         'upload_date': info.get('upload_date', 'Desconocida'),
                         'duration': info.get('duration', 0),
                         'categories': info.get('categories', ['Desconocida']),
-                        'description': info.get('description', 'Sin descripción')
+                        'description': info.get('description', 'Sin descripción'),
+                        'video_size': video_size,
+                        'audio_size': audio_size
                     }
         except Exception as e:
             pass
         return None
+
+    def _estimate_size(self, info, dtype):
+        try:
+            if dtype == 'audio':
+                formats = info.get('formats', [])
+                sizes = [f.get('filesize') or f.get('filesize_approx') for f in formats if f.get('vcodec') == 'none' and (f.get('filesize') or f.get('filesize_approx'))]
+                if sizes:
+                    return max(sizes)
+            else:
+                total = info.get('filesize') or info.get('filesize_approx')
+                if total:
+                    return total
+                formats = info.get('formats', [])
+                sizes = [f.get('filesize') or f.get('filesize_approx') for f in formats if (f.get('filesize') or f.get('filesize_approx'))]
+                if sizes:
+                    return max(sizes)
+        except Exception:
+            pass
+        return 0

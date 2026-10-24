@@ -248,7 +248,7 @@ class MainWindow:
                 }]
                 source_desc = "URL Directa"
             else:
-                max_results_displayed = self.app_context.config.getint('SEARCH', 'max_results_displayed') if self.app_context.config.has_option('SEARCH', 'max_results_displayed') else 40
+                max_results_displayed = self.app_context.config.getint('YTDLP', 'max_results_displayed') if self.app_context.config.has_option('YTDLP', 'max_results_displayed') else 40
                 self.current_results, source_desc = self.app_context.downloader.search_videos(query, max_results_displayed)
 
             self.root.after(0, lambda: self.update_results_ui(source_desc))
@@ -317,10 +317,35 @@ class MainWindow:
         video_title = item['title']
         video_id = item.get('id') or url
 
-        # Si es una consulta de sugerencia, resolver la URL real de búsqueda mediante yt-dlp
-        if url.startswith("ytsearch:"):
-            self.lbl_status.config(text=f"Buscando enlace directo para: {video_title}...")
-            def resolve_and_download():
+        self.lbl_status.config(text=f"Verificando detalles de descarga...")
+        self.app_context.accessibility_manager.announce("Verificando tamaño de descarga.")
+
+        try:
+             details = self.app_context.downloader.get_video_details(url)
+             if details:
+                 size = details.get('video_size', 0) if download_type == 'video' else details.get('audio_size', 0)
+                 download_size_before_confirm_gb = self.app_context.config['YTDLP'].getfloat('download_size_before_confirm', 0.5)
+                 _download_size_config_bytes = (download_size_before_confirm_gb * 1024 * 1024 * 1024)
+                 print(f"size en bytes: {size} > {_download_size_config_bytes} = {size > _download_size_config_bytes}")
+                 if size > _download_size_config_bytes:  # check if size is > coeficient GB
+                     size_gb = size / (1024 * 1024 * 1024)
+                     msg = f"El tamaño estimado de descarga es de {size_gb:.2f} GB.\n¿Desea continuar con la descarga?"
+                     self.app_context.accessibility_manager.announce(f"{msg}. Presione Enter para aceptar o Escape para cancelar.")
+                     continue_download = messagebox.askyesno(f"Archivo grande (>{download_size_before_confirm_gb}GB)", msg, parent=self.root)
+                     if not continue_download:
+                         self.root.after(0, lambda: self.lbl_status.config(text="Descarga cancelada."))
+                         self.app_context.accessibility_manager.announce("Descarga cancelada.")
+                         return
+        except (ValueError, TypeError, KeyError) as e:
+            print(f"Error al verificar el tamaño de descarga: {e}")
+            self.root.after(0, lambda: self.lbl_status.config(text="No se pudo verificar el tamaño de la descarga."))
+            self.app_context.accessibility_manager.announce( "No se pudo verificar el tamaño de la descarga. La operación fue cancelada.")
+            return
+
+        def resolve_and_download():
+            # Si es una consulta de sugerencia, resolver la URL real de búsqueda mediante yt-dlp
+            if url.startswith("ytsearch:"):
+                self.lbl_status.config(text=f"Buscando enlace directo para: {video_title}...")
                 try:
                     import yt_dlp
                     ydl_opts = {'default_search': 'ytsearch1', 'extract_flat': True, 'quiet': True, 'noproxy': True}
@@ -338,11 +363,11 @@ class MainWindow:
                     resolved_id = video_id
 
                 self.root.after(0, lambda: self._start_real_download(real_url, download_type, title=video_title, video_id=resolved_id))
+            else:
+                self.root.after(0, lambda: self._start_real_download(url, download_type, title=video_title, video_id=video_id))
 
-            import threading
-            threading.Thread(target=resolve_and_download, daemon=True).start()
-        else:
-            self._start_real_download(url, download_type, title=video_title, video_id=video_id)
+        import threading
+        threading.Thread(target=resolve_and_download, daemon=True).start()
 
     def _start_real_download(self, url, download_type, title=None, video_id=None):
         play_audio_file(self.app_context.project_path + "/assets/sounds/low/tab_low.wav")
