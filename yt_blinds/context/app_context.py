@@ -22,7 +22,7 @@ class AppContext:
         self.accessibility_manager = AccessibilityManager(self)
 
     def _load_config(self):
-        config_parser = configparser.ConfigParser()
+        config_parser = configparser.ConfigParser(interpolation=None)
         config_path = os.path.join(self.project_path, "config", "ytblinds.ini")
         if os.path.exists(config_path):
             config_parser.read(config_path)

@@ -104,7 +104,7 @@ def _display_video_info(root, color_scheme, app_context, listbox_results, select
         lbl.pack(anchor=tk.W, padx=5, pady=2)
 
         def tab_metadata(event, lt, vt):
-            valor_accesible = "Metadato {metadata_name} - Valor: {metadata_value}"
+            valor_accesible = "Metadato {metadata_name}. Valor: {metadata_value}."
             play_audio_file(app_context.project_path + "/assets/sounds/low/tab_low.wav")
             app_context.accessibility_manager.announce(valor_accesible.format(metadata_name=lt, metadata_value=vt))
 
