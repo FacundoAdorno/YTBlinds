@@ -11,6 +11,7 @@ from ..updater import Updater
 from .detail_ui import DetailWindow
 from .help_ui import HelpWindow
 from .history_ui import HistoryWindow
+from .about_ui import AboutWindow
 
 
 class MainWindow:
@@ -204,6 +205,7 @@ class MainWindow:
 
     def bind_shortcuts(self):
         self.root.bind("<F1>", lambda e: self.show_help())
+        self.root.bind("<F2>", lambda e: AboutWindow.show_about(self.root, self.color_scheme, self.app_context))
         self.root.bind("<Alt-b>", lambda e: self.on_search_focus())
         self.root.bind("<Alt-v>", lambda e: self.download_selected("video"))
         self.root.bind("<Alt-a>", lambda e: self.download_selected("audio"))
@@ -329,10 +331,13 @@ class MainWindow:
                  print(f"size en bytes: {size} > {_download_size_config_bytes} = {size > _download_size_config_bytes}")
                  if size > _download_size_config_bytes:  # check if size is > coeficient GB
                      size_gb = size / (1024 * 1024 * 1024)
-                     msg = f"El tamaño estimado de descarga es de {size_gb:.2f} GB.\n¿Desea continuar con la descarga?"
+                     size_mb = size / (1024 * 1024)
+                     msg = f"Tamaño estimado de descarga del {download_type} es de { f"{size_mb:.1f} megabytes" if size_mb < 1024 else f"{size_gb:.2f} gigabytes"}.\n¿Desea continuar con la descarga?"
+                     play_audio_file(self.app_context.project_path + "/assets/sounds/low/open_window_low.wav")
                      self.app_context.accessibility_manager.announce(f"{msg}. Presione Enter para aceptar o Escape para cancelar.")
-                     continue_download = messagebox.askyesno(f"Archivo grande (>{download_size_before_confirm_gb}GB)", msg, parent=self.root)
+                     continue_download = messagebox.askyesno("Archivo a descargar es grande.", msg, parent=self.root)
                      if not continue_download:
+                         play_audio_file(self.app_context.project_path + "/assets/sounds/cancel.wav")
                          self.root.after(0, lambda: self.lbl_status.config(text="Descarga cancelada."))
                          self.app_context.accessibility_manager.announce("Descarga cancelada.")
                          return

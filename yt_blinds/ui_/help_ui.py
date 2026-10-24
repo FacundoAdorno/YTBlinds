@@ -22,6 +22,7 @@ class HelpWindow:
             "- Teclas Control + Alt + F: Abrir carpeta de audios descargados.\n",
             "- Teclas Alt + U: Actualizar yt-dlp a la última versión.\n",
             "- Tecla F1: Mostrar esta ayuda.\n",
+            "- Tecla F2: Mostrar ventana 'Acerca de' con versiones del sistema.\n",
             "- \n",
             "YTBlinds es una aplicación sencilla pensada para la gente no vidente o con baja visibilidad.\n",
             "Su objetivo es descargar videos desde Youtube en formato audio ó video.\n"
