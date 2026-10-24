@@ -14,5 +14,8 @@
 
 * MattRuthSound (https://freesound.org/people/MattRuthSound/) is the creator of the following sounds:
     - akey.wav
-        _(Original Name: Keyboard, computer, mechanical, typing, individual keys, press,
-            button, click, tap, One Keypress 96Khz Mono ZoomH4n NT5-006.wav)_
+        _(Original Name: Keyboard, computer, mechanical, typing, individual keys, press, button, click, tap, One Keypress 96Khz Mono ZoomH4n NT5-006.wav)_
+
+* Dylan Kelk/SilverIllusionist (Freesound)
+    - cancel.wav
+        _(Original Name: "Cancel (Timid Vibes, louder highs)")_
