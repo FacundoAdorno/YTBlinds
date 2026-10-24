@@ -9,6 +9,9 @@ from ..accessibility import AccessibilityManager
 class AppContext:
     """Contexto centralizado de la aplicación que administra servicios y dependencias."""
     def __init__(self):
+        # Specify the base path for the project
+        self.project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
         self.config = self._load_config()
         self.history_manager = DownloadHistoryManager(
             db_relative_path = self.config['DATA']['db_relativepath_dir'],
@@ -18,13 +21,9 @@ class AppContext:
 
         self.accessibility_manager = AccessibilityManager(self)
 
-        # Specify the base path for the project
-        self.project_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
     def _load_config(self):
         config_parser = configparser.ConfigParser()
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_path = os.path.join(base_dir, "config", "ytblinds.ini")
+        config_path = os.path.join(self.project_path, "config", "ytblinds.ini")
         if os.path.exists(config_path):
             config_parser.read(config_path)
         return config_parser
