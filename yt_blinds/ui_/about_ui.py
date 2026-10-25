@@ -63,7 +63,7 @@ class AboutWindow:
             f"• SO: {os_info}\n",
             f"• yt-dlp: {ytdlp_ver}\n",
             f"• FFmpeg: {ffmpeg_ver}\n",
-            f"• TTS: {tts_info}"
+            f"• Text-To-Speech Engine: {tts_info}"
         )
 
         about_win = tk.Toplevel(root)

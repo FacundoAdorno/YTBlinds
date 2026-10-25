@@ -101,7 +101,8 @@ class HistoryWindow:
 
         listbox_history = tk.Listbox(
             list_container,
-            font=("Arial", 11),
+            font=("Arial", 12),
+            height=14,
             bg="#111111",
             fg=color_scheme.fg_color,
             selectbackground=color_scheme.accent_color,

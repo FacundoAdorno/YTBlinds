@@ -28,7 +28,9 @@ class MainWindow:
         else:   # could be Linux
             icon_image = tk.PhotoImage(file=context.project_path + '/assets/images/ytblinds.png')
             root.iconphoto(False, icon_image)
-        self.root.geometry("{w}x{h}".format(w=self.app_context.config['GENERAL']['win_height'],h=self.app_context.config['GENERAL']['win_width']))
+        win_h = self.app_context.config['GENERAL'].getint('win_height', 650)
+        win_w = self.app_context.config['GENERAL'].getint('win_width', 800)
+        self.root.geometry(f"{win_w}x{win_h}")
 
         # Configurar colores de alto contraste (Fondo oscuro, texto blanco/amarillo)
         self.color_scheme = ColorScheme(bg_color=self.app_context.config['STYLES']['bg_color'],
