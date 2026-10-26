@@ -141,7 +141,6 @@ class Downloader:
                     'format': 'bestvideo+bestaudio/best',
                 })
 
-            downloaded_file_path = [None]
             if progress_callback:
                 def hook(d):
                     if d['status'] == 'downloading':
@@ -149,8 +148,18 @@ class Downloader:
                         progress_callback(f"Descargando: {p}")
                     elif d['status'] == 'finished':
                         progress_callback("Descarga finalizada. Procesando archivo...")
-                        downloaded_file_path[0] = d.get('filename')
                 ydl_opts['progress_hooks'] = [hook]
+
+            downloaded_file_path = [None]
+            def postprocessor_hook(d):
+                info = d.get('info_dict', {})
+                filepath = info.get('filepath')
+
+                if filepath:
+                    downloaded_file_path[0] = filepath
+                    print(downloaded_file_path[0])
+
+            ydl_opts['postprocessor_hooks'] = [postprocessor_hook]
 
             try:
                 self.app_context.accessibility_manager.announce(f"Iniciando descarga de {download_type}...")
@@ -174,13 +183,15 @@ class Downloader:
                             os.remove(new_filepath)
                         os.rename(final_path, new_filepath)
 
-                    saved_path = new_filepath
+                    saved_path = dir_name
+                    saved_filename = new_filename
                     downloaded_title = sanitized_name
                 else:
                     saved_path = download_dir
+                    saved_filename = sanitize_filename(os.path.split(final_path)[1])
                     downloaded_title = sanitize_filename(raw_title)
 
-                self.app_context.history_manager.add_download(actual_vid, downloaded_title, saved_path, download_type)
+                self.app_context.history_manager.add_download(actual_vid, downloaded_title, saved_path, saved_filename, download_type)
 
                 self.app_context.accessibility_manager.announce("Descarga completada con éxito.")
                 if completion_callback:

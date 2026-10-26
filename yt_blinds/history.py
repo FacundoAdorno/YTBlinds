@@ -36,6 +36,7 @@ class DownloadHistoryManager:
                     video_id TEXT NOT NULL,
                     title TEXT NOT NULL,
                     path TEXT NOT NULL,
+                    filename TEXT NOT NULL,
                     date TEXT NOT NULL,
                     type TEXT DEFAULT 'video',
                     UNIQUE(video_id, type)
@@ -48,35 +49,36 @@ class DownloadHistoryManager:
                 conn.execute("ALTER TABLE downloads ADD COLUMN video_id TEXT DEFAULT ''")
             conn.commit()
 
-    def add_download(self, video_id, title, path, download_type='video'):
+    def add_download(self, video_id, title, path, filename, download_type='video'):
         sanitized_title = sanitize_filename(title)
+        sanitized_filename = sanitize_filename(filename)
         date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
-                INSERT OR REPLACE INTO downloads (video_id, title, path, date, type)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO downloads (video_id, title, path, filename, date, type)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (video_id, sanitized_title, path, date_str, download_type)
+                (video_id, sanitized_title, path, sanitized_filename, date_str, download_type)
             )
             conn.commit()
 
     def check_and_cleanup_missing_file(self, video_id, download_type, expected_dir):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT path, title FROM downloads WHERE video_id = ? AND type = ?", (video_id, download_type))
+            cursor.execute("SELECT path, filename FROM downloads WHERE video_id = ? AND type = ?", (video_id, download_type))
             row = cursor.fetchone()
             if row:
-                saved_path, title = row
+                saved_path, filename = row
                 file_exists = False
                 if os.path.isfile(saved_path) and os.path.exists(saved_path):
                     file_exists = True
                 else:
-                    sanitized_title = sanitize_filename(title)
+                    sanitized_filename = sanitize_filename(filename)
                     check_dir = saved_path if os.path.isdir(saved_path) else expected_dir
                     if os.path.exists(check_dir):
                         for f in os.listdir(check_dir):
-                            if sanitized_title.lower() in f.lower() or video_id in f:
+                            if sanitized_filename.lower() in f.lower() or video_id in f:
                                 file_exists = True
                                 break
 
@@ -90,7 +92,7 @@ class DownloadHistoryManager:
     def get_history(self, download_type=None, filter_query=""):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            query = "SELECT title, path, date, type, video_id FROM downloads WHERE 1=1"
+            query = "SELECT title, path, date, filename, type, video_id FROM downloads WHERE 1=1"
             params = []
             if download_type:
                 query += " AND type = ?"
