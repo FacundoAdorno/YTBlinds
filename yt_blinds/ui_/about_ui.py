@@ -35,7 +35,11 @@ class AboutWindow:
 
         ffmpeg_ver = "No detectado"
         try:
-            res = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True, timeout=3)
+            ffmpeg_bin_path = "ffmpeg"
+            if app_context.downloader.ffmpeg_custom_dir and app_context.downloader.ffmpeg_custom_dir is not None:
+                print("Entre aca en about...")
+                ffmpeg_bin_path = f"{app_context.downloader.ffmpeg_custom_dir}/ffmpeg"
+            res = subprocess.run([ffmpeg_bin_path, "-version"], capture_output=True, text=True, timeout=3)
             if res.returncode == 0:
                 first_line = res.stdout.splitlines()[0] if res.stdout else ""
                 ffmpeg_ver = first_line.split("version")[1].strip().split()[0] if "version" in first_line else "Detectado"

@@ -25,7 +25,13 @@ class AppContext:
         config_parser = configparser.ConfigParser(interpolation=None)
         config_path = os.path.join(self.project_path, "config", "ytblinds.ini")
         if os.path.exists(config_path):
-            config_parser.read(config_path)
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    # Limpiar espacios en blanco al inicio de cada línea antes de parsear
+                    cleaned_lines = [line.lstrip() for line in f]
+                config_parser.read_string("".join(cleaned_lines))
+            except configparser.Error as e:
+                print(f"Error al parsear la configuración: {e}")
         return config_parser
 
     def get_download_path(self, download_type='video'):

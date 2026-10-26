@@ -1,8 +1,10 @@
 import json
 import os
+import platform
 import sys
-import urllib.request
 import urllib.parse
+import urllib.request
+from pathlib import Path
 
 # Añadir vendor al sys.path para importar yt_dlp localmente desde vendor/yt_dlp
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,6 +24,44 @@ class Downloader:
         if context is None:
             raise TypeError("Debe especificar indicar una instancia de AppContext.")
         self.app_context = context
+        ffmpeg_path = context.config['YTDLP'].get('ffmpeg_binaries_path', '').strip()
+
+        if ffmpeg_path:
+            # Expandir variables de usuario (~, %USERPROFILE%, etc.)
+            expanded_path = Path(os.path.expandvars(ffmpeg_path)).expanduser()
+
+            # Si la ruta es relativa (ej. empieza con . o no es absoluta), resolverla respecto a la raíz del proyecto
+            if not expanded_path.is_absolute():
+                # app_context.project_path o la raíz del proyecto
+                base_dir = Path(self.app_context.project_path)
+                ffmpeg_path = Path(str((base_dir / expanded_path).resolve()))
+            else:
+                ffmpeg_path = Path(str(expanded_path.resolve()))
+
+            if ffmpeg_path.is_dir():
+                # Verificamos si bajo este directorio existen los binarios ffmpeg y ffprobe.
+                exe_ext = ".exe" if platform.system() == "Windows" else ""
+                ffmpeg_bin = None
+                ffprobe_bin = None
+                # Si es un directorio, buscar dentro de él
+                candidate_ffmpeg = ffmpeg_path / f"ffmpeg{exe_ext}"
+                candidate_ffprobe = ffmpeg_path / f"ffprobe{exe_ext}"
+
+                if candidate_ffmpeg.exists():
+                    ffmpeg_bin = candidate_ffmpeg
+                if candidate_ffprobe.exists():
+                    ffprobe_bin = candidate_ffprobe
+
+                self.ffmpeg_custom_dir = ffmpeg_path if ffmpeg_bin and ffprobe_bin else None
+            else:
+                print(
+                    f"[ERROR] Configuración inválida. El directorio especificado "
+                    f"para 'ffmpeg_binaries_path' ({ffmpeg_path}) no existe."
+                )
+                self.ffmpeg_custom_dir = None
+        else:
+            self.ffmpeg_custom_dir = None
+
 
     def search_videos(self, query, max_results=40):
         if not query.strip():
@@ -50,6 +90,9 @@ class Downloader:
                 'ignoreerrors': True,
                 'noproxy': True,
             }
+            if self.ffmpeg_custom_dir and self.ffmpeg_custom_dir is not None:
+                ydl_opts['ffmpeg_location'] = self.ffmpeg_custom_dir
+
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 search_query = f"ytsearch{max_results}:{query}"
                 info = ydl.extract_info(search_query, download=False)
@@ -193,7 +236,7 @@ class Downloader:
 
                 self.app_context.history_manager.add_download(actual_vid, downloaded_title, saved_path, saved_filename, download_type)
 
-                self.app_context.accessibility_manager.announce("Descarga completada con éxito.")
+                self.app_context.accessibility_manager.announce("Descarga completada con éxito. Presione Escape para cerrar ventana.")
                 if completion_callback:
                     completion_callback(True, "Descarga completada con éxito.")
             except Exception as e:

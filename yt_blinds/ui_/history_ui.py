@@ -134,7 +134,8 @@ class HistoryWindow:
         def open_selected(parent):
             selection = listbox_history.curselection()
             if not selection:
-                context.accessibility_manager.announce("Ningún elemento seleccionado para abrir.")
+                play_audio_file(context.project_path + "/assets/sounds/low/error_low.wav")
+                context.accessibility_manager.announce("Ningún elemento seleccionado para abrir. Presione Enter para cerrar ventana.")
                 messagebox.showwarning("Aviso", "Seleccione un elemento del historial.")
                 return
             idx = selection[0]
@@ -156,8 +157,10 @@ class HistoryWindow:
                             else:
                                 subprocess.run(["xdg-open", str(file_path)])
                     except Exception as e:
+                        play_audio_file(context.project_path + "/assets/sounds/low/error_low.wav")
                         messagebox.showerror("Error", f"No se pudo abrir el archivo: {e}")
                 else:
+                    play_audio_file(context.project_path + "/assets/sounds/low/open_window_low.wav")
                     context.accessibility_manager.announce("El archivo ya no existe en el disco. Eliminando del historial.")
                     with sqlite3.connect(context.history_manager.db_path) as conn:
                         conn.execute("DELETE FROM downloads WHERE video_id = ? AND type = ?", (video_id, dtype))
@@ -168,15 +171,17 @@ class HistoryWindow:
         def delete_selected(parent):
             selection = listbox_history.curselection()
             if not selection:
+                play_audio_file(context.project_path + "/assets/sounds/low/error_low.wav")
                 context.accessibility_manager.announce("Ningún elemento seleccionado para eliminar.")
                 messagebox.showwarning("Aviso", "Seleccione un elemento del historial para eliminar.", parent=parent)
                 return
             idx = selection[0]
             if idx < len(history_records):
-                title, path, date, dtype, video_id = history_records[idx]
+                title, path, date, filename, dtype, video_id = history_records[idx]
 
+                play_audio_file(context.project_path + "/assets/sounds/low/open_window_low.wav")
                 confirm_mssg = f"¿Está seguro de que desea eliminar '{title}' del historial?"
-                context.accessibility_manager.announce(confirm_mssg)
+                context.accessibility_manager.announce(f"{confirm_mssg}. Presione Enter para confirmar, ó Escape para cancelar.")
                 if messagebox.askyesno("Confirmar eliminación", confirm_mssg, parent=parent):
                     try:
                         with sqlite3.connect(context.history_manager.db_path) as conn:
@@ -185,6 +190,8 @@ class HistoryWindow:
                         context.accessibility_manager.announce("Elemento eliminado del historial.")
                         load_history_items(focus_on_list=True)
                     except Exception as e:
+                        play_audio_file(context.project_path + "/assets/sounds/low/error_low.wav")
+                        context.accessibility_manager.announce(f"Error. No se pudo eliminar: {e}. Presione Escape para cerrar ventana.")
                         messagebox.showerror("Error", f"No se pudo eliminar: {e}", parent=parent)
 
         # Marco inferior con botones de Abrir, Eliminar y Cerrar
