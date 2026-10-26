@@ -37,7 +37,6 @@ class AboutWindow:
         try:
             ffmpeg_bin_path = "ffmpeg"
             if app_context.downloader.ffmpeg_custom_dir and app_context.downloader.ffmpeg_custom_dir is not None:
-                print("Entre aca en about...")
                 ffmpeg_bin_path = f"{app_context.downloader.ffmpeg_custom_dir}/ffmpeg"
             res = subprocess.run([ffmpeg_bin_path, "-version"], capture_output=True, text=True, timeout=3)
             if res.returncode == 0:
