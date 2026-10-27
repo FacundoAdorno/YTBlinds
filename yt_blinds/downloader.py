@@ -90,8 +90,6 @@ class Downloader:
                 'ignoreerrors': True,
                 'noproxy': True,
             }
-            if self.ffmpeg_custom_dir and self.ffmpeg_custom_dir is not None:
-                ydl_opts['ffmpeg_location'] = self.ffmpeg_custom_dir
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 search_query = f"ytsearch{max_results}:{query}"
@@ -169,6 +167,9 @@ class Downloader:
                 'noplaylist': True,
                 'noproxy': True,
             }
+
+            if self.ffmpeg_custom_dir and self.ffmpeg_custom_dir is not None:
+                ydl_opts['ffmpeg_location'] = str(self.ffmpeg_custom_dir)
 
             if download_type == 'audio':
                 ydl_opts.update({

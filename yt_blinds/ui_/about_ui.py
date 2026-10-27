@@ -4,6 +4,7 @@ import subprocess
 import tkinter as tk
 import webbrowser
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 from PIL import Image, ImageTk
 
@@ -35,15 +36,21 @@ class AboutWindow:
 
         ffmpeg_ver = "No detectado"
         try:
-            ffmpeg_bin_path = "ffmpeg"
+            exe_ext = ".exe" if platform.system() == "Windows" else ""
+            ffmpeg_bin_path = f"ffmpeg{exe_ext}"
             if app_context.downloader.ffmpeg_custom_dir and app_context.downloader.ffmpeg_custom_dir is not None:
-                ffmpeg_bin_path = f"{app_context.downloader.ffmpeg_custom_dir}/ffmpeg"
-            res = subprocess.run([ffmpeg_bin_path, "-version"], capture_output=True, text=True, timeout=3)
+                ffmpeg_bin_path = f"{app_context.downloader.ffmpeg_custom_dir}/ffmpeg{exe_ext}"
+            ffmpeg_expanded_path = Path(os.path.expandvars(ffmpeg_bin_path)).expanduser()
+            # Configurar flags de ventana para Windows (evita errores en modo --windowed cuando se crea ejecutable)
+            creationflags = 0
+            if platform.system() == "Windows":
+                creationflags = subprocess.CREATE_NO_WINDOW
+            res = subprocess.run([str(ffmpeg_expanded_path), "-version"], capture_output=True, text=True, timeout=3, creationflags=creationflags)
             if res.returncode == 0:
                 first_line = res.stdout.splitlines()[0] if res.stdout else ""
                 ffmpeg_ver = first_line.split("version")[1].strip().split()[0] if "version" in first_line else "Detectado"
-        except Exception:
-            pass
+        except Exception as e:
+            print("No se pudo detectar versión de FFMPEG: ", repr(e))
 
         tts_info = "UNK"
         try:
